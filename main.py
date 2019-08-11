@@ -320,7 +320,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def getValueAt(self, rowIndex, columnIndex):
         logEntry = self._log.get(rowIndex)
 
-        #self.showAllButton.isSelected()
         return self.returnEntry(rowIndex, columnIndex, logEntry)
 
         if self.showNewButton.isSelected() and not(logEntry._analyzed):  
@@ -360,6 +359,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 #
 # extend JTable to handle cell selection
 #
+
+    #def getRequest(self,):
     
 class Table(JTable):
     def __init__(self, extender):
@@ -371,12 +372,18 @@ class Table(JTable):
         # shows "entries" matching
 
         # show the log entry for the selected row
+        print 'Selecting entry in changeSelection: ' 
         logEntry = self._extender._log.get(row)
+        print 'Selected entry: ' 
+        print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
+        
+        JTable.changeSelection(self, row, 1, toggle, extend)
+
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
         self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
         self._extender._currentlyDisplayedItem = logEntry._requestResponse
         
-        JTable.changeSelection(self, row, col, toggle, extend)
+        #JTable.changeSelection(self, row, col, toggle, extend)
     
 #
 # class to hold details of each log entry
