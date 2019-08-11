@@ -70,6 +70,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
         self.SELECTED_MODEL_ROW = 0
+        self.SELECTED_VIEW_ROW = 0
 
         self._log = ArrayList()
         self._fullLog = ArrayList()
@@ -384,7 +385,7 @@ class Table(JTable):
         # shows "entries" matching
 
         # show the log entry for the selected row
-        print 'Selecting entry ' + str(row) + ' in changeSelection: ' 
+        #print 'Selecting entry ' + str(row) + ' in changeSelection: ' 
 
         modelRow = self.convertRowIndexToModel(row)
         #print 'converted: ' + str()
@@ -395,6 +396,7 @@ class Table(JTable):
 
         JTable.changeSelection(self, row, 1, toggle, extend)
         self._extender.SELECTED_MODEL_ROW = modelRow
+        self._extender.SELECTED_VIEW_ROW = row
 
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
         self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
@@ -467,13 +469,28 @@ class markRequestsHandler(ActionListener):
 
     def actionPerformed(self, e):
         print "COPY SELECTED URL HANDLER ******"
-        print "Status is: " + str(self._state)
-        print "Url to change: " + self._extender._log.get(self._extender.SELECTED_MODEL_ROW)._url
+        #print "Status is: " + str(self._state)
+
+        url = self._extender._log.get(self._extender.SELECTED_MODEL_ROW)._url
+        #print "Url to change: " + url
+
+        ### TODO REPLACE FOR MARK_AS_ANALYZED 
+        self._extender._lock.acquire()
+
+        for item in self._extender._log:
+            if url == item._url:
+                item._analyzed = self._state
+                break
+        self._extender._lock.release()
+
+        self._extender.fireTableDataChanged()
+        print 'refreshing view ..... *****'
+
+        #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
+        #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, False, False)
+        #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
 
         return 
-        stringSelection = StringSelection(str(self._extender._helpers.analyzeRequest(self._extender._currentlyDisplayedItem._requestResponse).getUrl()))
-        clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard()
-        clpbrd.setContents(stringSelection, None)
 
 ### GLOBAL CONTEXT #### 
 class handleMenuItems(ActionListener):
