@@ -67,6 +67,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # 
         
         # create the log and a lock on which to synchronize when adding log entries
+
+
+        self.SELECTED_MODEL_ROW = 0
+
         self._log = ArrayList()
         self._fullLog = ArrayList()
         self._lock = Lock()
@@ -130,13 +134,17 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
         
 
-        copyURLitem = JMenuItem("Copy URL")
-        copyURLitem.addActionListener(copySelectedURL(self))
+        markAnalyzedButton = JMenuItem("Mark Requests as Analyzed")
+        markAnalyzedButton.addActionListener(markRequestsHandler(self, True))
+
+        markNotAnalyzedButton = JMenuItem("Mark Requests as NOT Analyzed")
+        markNotAnalyzedButton.addActionListener(markRequestsHandler(self, False))
 
         #sendRequestMenu = JMenuItem("Send Original Request to Repeater")
         #sendRequestMenu.addActionListener(sendRequestRepeater(self, self._callbacks, True))
         self.menu = JPopupMenu("Popup")
-        self.menu.add(copyURLitem)
+        self.menu.add(markAnalyzedButton)
+        self.menu.add(markNotAnalyzedButton)
 
         # customize our UI components
         callbacks.customizeUiComponent(self._parentPane)
@@ -386,6 +394,7 @@ class Table(JTable):
         #print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
 
         JTable.changeSelection(self, row, 1, toggle, extend)
+        self._extender.SELECTED_MODEL_ROW = modelRow
 
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
         self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
@@ -451,12 +460,16 @@ class CustomTableRowSorter(TableRowSorter):
 
 
 
-class copySelectedURL(ActionListener):
-    def __init__(self, extender):
+class markRequestsHandler(ActionListener):
+    def __init__(self, extender, state):
         self._extender = extender
+        self._state = state
 
     def actionPerformed(self, e):
         print "COPY SELECTED URL HANDLER ******"
+        print "Status is: " + str(self._state)
+        print "Url to change: " + self._extender._log.get(self._extender.SELECTED_MODEL_ROW)._url
+
         return 
         stringSelection = StringSelection(str(self._extender._helpers.analyzeRequest(self._extender._currentlyDisplayedItem._requestResponse).getUrl()))
         clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard()
