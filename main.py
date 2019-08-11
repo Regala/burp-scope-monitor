@@ -110,6 +110,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         
         # table of log entries
         self.logTable = Table(self)
+        self.logTable.setAutoCreateRowSorter(True)
+
         scrollPane = JScrollPane(self.logTable)
         self._splitpane.setLeftComponent(scrollPane)
 
@@ -121,12 +123,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         tabs.addTab("Response", self._responseViewer.getComponent())
         self._splitpane.setRightComponent(tabs)
 
-        self._tableRowSorterAutoProxyAutoAction = CustomTableRowSorter(self.logTable.getModel())
-        self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
-        #self.tableSorter = TableRowSorter(self)
-        #filter = tableFilter(self)
-        #self.tableSorter.setRowFilter(filter)
-        #logTable.setRowSorter(self.tableSorter)
+        ## Row sorter shit 
+
+        #self._tableRowSorterAutoProxyAutoAction = CustomTableRowSorter(self.logTable.getModel())
+        #self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
         
 
         copyURLitem = JMenuItem("Copy URL")
@@ -372,11 +372,15 @@ class Table(JTable):
         # shows "entries" matching
 
         # show the log entry for the selected row
-        print 'Selecting entry in changeSelection: ' 
-        logEntry = self._extender._log.get(row)
-        print 'Selected entry: ' 
+        print 'Selecting entry ' + str(row) + ' in changeSelection: ' 
+
+        modelRow = self.convertRowIndexToModel(row)
+        #print 'converted: ' + str()
+
+        logEntry = self._extender._log.get(modelRow)
+
         print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
-        
+
         JTable.changeSelection(self, row, 1, toggle, extend)
 
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
