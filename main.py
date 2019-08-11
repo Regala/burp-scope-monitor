@@ -7,6 +7,7 @@ from burp import IContextMenuFactory
 from java.awt import Component;
 from java.io import PrintWriter;
 from java.util import ArrayList;
+from java.util import LinkedList;
 from java.util import List;
 from javax.swing import JScrollPane;
 from javax.swing import JSplitPane;
@@ -70,7 +71,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._lock = Lock()
         
         # main split pane
-        self._parentPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
+        self._parentPane = JTabbedPane()
 
         self._splitpane = JSplitPane(JSplitPane.VERTICAL_SPLIT)
 
@@ -104,8 +105,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         ##### end config pane
 
 
-        self._parentPane.setLeftComponent(self._splitpane)
-        self._parentPane.setRightComponent(self._config)
+        self._parentPane.addTab("Monitor", self._splitpane)
+        self._parentPane.addTab("Config", self._config)
         
         # table of log entries
         self.logTable = Table(self)
@@ -157,19 +158,21 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         
     ##### CUSTOM CODE #####
 
+    ## GLOBAL CONTEXT CODE ##
+
     def createMenuItems(self, invocation):
         responses = invocation.getSelectedMessages()
-        print 'trying to create menuItems..'
+        print 'trying to create menuItems.. (GLOBAL)'
         if responses > 0:
             ret = LinkedList()
-            requestMenuItem = JMenuItem("XXX Send request to Autorize")
-            cookieMenuItem = JMenuItem("XXX Send cookie to Autorize")
+            analyzedMenuItem = JMenuItem("Mark as analyzed")
+            notAnalyzedMenuItem = JMenuItem("Mark as NOT analyzed")
 
             for response in responses:
-                requestMenuItem.addActionListener(handleMenuItems(self,response, "request"))
-                cookieMenuItem.addActionListener(handleMenuItems(self, response, "cookie"))   
-            ret.add(requestMenuItem)
-            ret.add(cookieMenuItem)
+                analyzedMenuItem.addActionListener(handleMenuItems(self,response, "analyzed"))
+                notAnalyzedMenuItem.addActionListener(handleMenuItems(self, response, "not"))   
+            ret.add(analyzedMenuItem)
+            ret.add(notAnalyzedMenuItem)
             return ret
 
 
@@ -239,10 +242,28 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     # implement IHttpListener
     #
     
+    def markAnalyzed(self, messageIsRequest, state):
+        print "markAnalyzed..."
+        self._lock.acquire()
+
+        url = self.getEndpoint(messageIsRequest)
+        for item in self._log:
+            if url == item._url:
+                item._analyzed = state
+                self._lock.release()
+                return
+        self._lock.release()
+        return
+
     def processHttpMessage(self, toolFlag, messageIsRequest, messageInfo):
         # only process requests
-        if messageIsRequest:
-            return
+
+        #print "processing httpMessage.."
+        #print messageIsRequest
+        #if messageIsRequest:
+        #    return
+
+        #print "still processing httpMessage.."
 
         #if (self._callbacks.getToolName(toolFlag) != "Proxy") or (self._callbacks.getToolName(toolFlag) != "Repeater"):
         #    return
@@ -313,8 +334,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def returnEntry(self, rowIndex, columnIndex, entry):
         logEntry = self._log.get(rowIndex)
         if columnIndex == 0:
-            return logEntry._analyzed
-            return self._callbacks.getToolName(logEntry._tool)
+            if logEntry._analyzed:
+                return "True"
+            else:
+                return "False"
         if columnIndex == 1:
             return logEntry._url
         return ""
@@ -407,10 +430,12 @@ class copySelectedURL(ActionListener):
         self._extender = extender
 
     def actionPerformed(self, e):
+        print "COPY SELECTED URL******"
         stringSelection = StringSelection(str(self._extender._helpers.analyzeRequest(self._extender._currentlyDisplayedItem._requestResponse).getUrl()))
         clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard()
         clpbrd.setContents(stringSelection, None)
 
+### GLOBAL CONTEXT #### 
 class handleMenuItems(ActionListener):
     def __init__(self, extender, messageInfo, menuName):
         self._extender = extender
@@ -418,10 +443,15 @@ class handleMenuItems(ActionListener):
         self._messageInfo = messageInfo
 
     def actionPerformed(self, e):
-        if self._menuName == "request":
-            print "do request"
+        if self._menuName == "analyzed":
+            print "MARK AS ANALYZED"
+            self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
+            self._extender.markAnalyzed(self._messageInfo, True)
             #start_new_thread(self._extender.sendRequestToAutorizeWork,(self._messageInfo,))
 
-        if self._menuName == "cookie":
-            print "do ciikie"
+        if self._menuName == "not":
+            print "MARK AS NOT ANALYZED"
+            self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
+            self._extender.markAnalyzed(self._messageInfo, False)
+
             #self._extender.replaceString.setText(self._extender.getCookieFromMessage(self._messageInfo))
