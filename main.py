@@ -18,6 +18,7 @@ from javax.swing.table import AbstractTableModel;
 from threading import Lock
 
 ###
+from java.awt.event import MouseAdapter
 from javax.swing import JMenuItem
 from javax.swing import JPopupMenu
 from java.awt.event import ActionListener
@@ -351,9 +352,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return self._currentlyDisplayedItem.getHttpService()
 
     def getRequest(self):
+        return 
         return self._currentlyDisplayedItem.getRequest()
 
     def getResponse(self):
+        return 
         return self._currentlyDisplayedItem.getResponse()
 
 #
@@ -366,6 +369,7 @@ class Table(JTable):
     def __init__(self, extender):
         self._extender = extender
         self.setModel(extender)
+        self.addMouseListener(mouseclick(self._extender))
     
     def changeSelection(self, row, col, toggle, extend):
     
@@ -379,7 +383,7 @@ class Table(JTable):
 
         logEntry = self._extender._log.get(modelRow)
 
-        print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
+        #print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
 
         JTable.changeSelection(self, row, 1, toggle, extend)
 
@@ -389,6 +393,15 @@ class Table(JTable):
         
         #JTable.changeSelection(self, row, col, toggle, extend)
     
+class mouseclick(MouseAdapter):
+
+    def __init__(self, extender):
+        self._extender = extender
+
+    def mouseReleased(self, evt):
+        if evt.button == 3:
+            self._extender.menu.show(evt.getComponent(), evt.getX(), evt.getY())
+
 #
 # class to hold details of each log entry
 #
@@ -436,12 +449,15 @@ class CustomTableRowSorter(TableRowSorter):
         except:
             pass
 
+
+
 class copySelectedURL(ActionListener):
     def __init__(self, extender):
         self._extender = extender
 
     def actionPerformed(self, e):
-        print "COPY SELECTED URL******"
+        print "COPY SELECTED URL HANDLER ******"
+        return 
         stringSelection = StringSelection(str(self._extender._helpers.analyzeRequest(self._extender._currentlyDisplayedItem._requestResponse).getUrl()))
         clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard()
         clpbrd.setContents(stringSelection, None)
