@@ -21,7 +21,9 @@ from threading import Lock
 from java.awt.event import MouseAdapter
 from javax.swing import JMenuItem
 from javax.swing import JPopupMenu
+from javax.swing import ListSelectionModel
 from java.awt.event import ActionListener
+#from java.awt.event import ListSelectionListener
 from java.awt import BorderLayout
 from java.awt import GridLayout
 from javax.swing import ButtonGroup
@@ -86,6 +88,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         config = JPanel()
         config.setLayout(GridLayout(1,3))
+        
 
         self.showAllButton = JRadioButton(SHOW_ALL_BUTTON_LABEL, True)
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
@@ -117,6 +120,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # table of log entries
         self.logTable = Table(self)
         self.logTable.setAutoCreateRowSorter(True)
+        self.logTable.setRowSelectionAllowed(True)
+
+
+
 
         scrollPane = JScrollPane(self.logTable)
         self._splitpane.setLeftComponent(scrollPane)
@@ -135,10 +142,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
         
 
-        markAnalyzedButton = JMenuItem("Mark Requests as Analyzed")
+        markAnalyzedButton = JMenuItem("(local) Mark Requests as Analyzed")
         markAnalyzedButton.addActionListener(markRequestsHandler(self, True))
 
-        markNotAnalyzedButton = JMenuItem("Mark Requests as NOT Analyzed")
+        markNotAnalyzedButton = JMenuItem("(local) Mark Requests as NOT Analyzed")
         markNotAnalyzedButton.addActionListener(markRequestsHandler(self, False))
 
         #sendRequestMenu = JMenuItem("Send Original Request to Repeater")
@@ -175,8 +182,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print 'trying to create menuItems.. (GLOBAL)'
         if responses > 0:
             ret = LinkedList()
-            analyzedMenuItem = JMenuItem("Mark as analyzed")
-            notAnalyzedMenuItem = JMenuItem("Mark as NOT analyzed")
+            analyzedMenuItem = JMenuItem("(Global) Mark as analyzed")
+            notAnalyzedMenuItem = JMenuItem("(Global) Mark as NOT analyzed")
 
             for response in responses:
                 analyzedMenuItem.addActionListener(handleMenuItems(self,response, "analyzed"))
@@ -379,6 +386,8 @@ class Table(JTable):
         self._extender = extender
         self.setModel(extender)
         self.addMouseListener(mouseclick(self._extender))
+        self.setRowSelectionAllowed(True)
+        self.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION)
     
     def changeSelection(self, row, col, toggle, extend):
     
@@ -471,20 +480,23 @@ class markRequestsHandler(ActionListener):
         print "COPY SELECTED URL HANDLER ******"
         #print "Status is: " + str(self._state)
 
-        url = self._extender._log.get(self._extender.SELECTED_MODEL_ROW)._url
-        #print "Url to change: " + url
+        rows = self._extender.logTable.getSelectedRows()
+        for row in rows:
+            url = self._extender._log.get(row)._url
 
-        ### TODO REPLACE FOR MARK_AS_ANALYZED 
-        self._extender._lock.acquire()
+            print "Changing url: " + url
 
-        for item in self._extender._log:
-            if url == item._url:
-                item._analyzed = self._state
-                break
-        self._extender._lock.release()
+            ### TODO REPLACE FOR MARK_AS_ANALYZED 
+            self._extender._lock.acquire()
 
-        self._extender.fireTableDataChanged()
-        print 'refreshing view ..... *****'
+            for item in self._extender._log:
+                if url == item._url:
+                    item._analyzed = self._state
+                    break
+            self._extender._lock.release()
+
+            self._extender.fireTableDataChanged()
+            print 'refreshing view ..... *****'
 
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, False, False)
