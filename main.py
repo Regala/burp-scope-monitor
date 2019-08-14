@@ -31,6 +31,7 @@ from java.awt.event import ActionListener
 #from java.awt.event import ListSelectionListener
 from java.awt import BorderLayout
 from java.awt import GridLayout
+from javax.swing import JTextArea
 from javax.swing import ButtonGroup
 from javax.swing import JRadioButton
 from javax.swing import JLabel
@@ -117,6 +118,29 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.clearButton.addActionListener(self.handleClearButton)
         self.clearButton.setBounds(40, 20, 100, 30)
 
+        self.badExtensionsLabel = JLabel("Ignore extensions:")
+        self.badExtensionsLabel.setBounds(50, 150, 200, 30)
+
+        self.badExtensionsText = JTextArea("")
+        self.loadBadExtensions()        
+        self.badExtensionsText.setBounds(50, 175, 300, 30)
+
+        self.badExtensionsButton = JButton("Save")
+        self.badExtensionsButton.addActionListener(self.handleBadExtensionsButton)
+        self.badExtensionsButton.setBounds(355, 175, 70, 30)
+
+        self.badMimesLabel = JLabel("Ignore mime types:")
+        self.badMimesLabel.setBounds(50, 220, 200, 30)
+
+        self.badMimesText = JTextArea("")
+        self.loadBadMimes() 
+        self.badMimesText.setBounds(50, 245, 300, 30)
+
+        self.badMimesButton = JButton("Save")
+        self.badMimesButton.addActionListener(self.handleBadMimesButton)
+        self.badMimesButton.setBounds(355, 245, 70, 30)
+
+
         bGroup = ButtonGroup()
 
         bGroup.add(self.showAllButton)
@@ -127,6 +151,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.add(self.showAllButton)
         config.add(self.showNewButton)
         config.add(self.showTestedButton)
+
+        config.add(self.badExtensionsButton)
+        config.add(self.badExtensionsText)
+        config.add(self.badExtensionsLabel)
+
+        config.add(self.badMimesButton)
+        config.add(self.badMimesText)
+        config.add(self.badMimesLabel)
 
 
         self._config.addTab("General", config)
@@ -208,11 +240,34 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         
     ##### CUSTOM CODE #####
 
+    def loadBadExtensions(self):
+        bad = self._callbacks.loadExtensionSetting("badExtensions")
+        print 'current: ' + self.badExtensionsText.getText()
+        if bad:
+            self.badExtensionsText.setText(bad)
+        else:
+            print 'no bad extension saved, reverting'
+            self.badExtensionsText.setText("YYxxxxx")
+
+    def loadBadMimes(self):
+        bad = self._callbacks.loadExtensionSetting("badMimes")
+        print 'current: ' + self.badMimesText.getText()
+        if bad:
+            self.badMimesText.setText(bad)
+        else:
+            print 'no bad mimes saved, reverting'
+            self.badMimesText.setText("YYxxxxx")
+
+
+
+            
+
+
+
     ## GLOBAL CONTEXT CODE ##
 
     def createMenuItems(self, invocation):
         responses = invocation.getSelectedMessages()
-        print 'trying to create menuItems.. (GLOBAL)'
         if responses > 0:
             ret = LinkedList()
             analyzedMenuItem = JMenuItem("Mark as analyzed")
@@ -240,6 +295,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def handleBadExtensionsButton(self, event):
+        extensions = self.badExtensionsText.getText()
+        self._callbacks.saveExtensionSetting("badExtensions", extensions)
+
+    def handleBadMimesButton(self, event):
+        mimes = self.badMimesText.getText()
+        self._callbacks.saveExtensionSetting("badMimes", mimes)
 
     def handleClearButton(self, event):
         print 'Clearing table'
