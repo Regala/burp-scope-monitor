@@ -15,9 +15,14 @@ from javax.swing import JTabbedPane;
 from javax.swing import JTable;
 from javax.swing import SwingUtilities;
 from javax.swing.table import AbstractTableModel;
+from javax.swing.table import DefaultTableCellRenderer;
+from javax.swing.table import DefaultTableModel;
+from javax.swing.table import TableColumn;
+from javax.swing.table import TableColumnModel;
 from threading import Lock
 
 ###
+from java.awt import Color
 from java.awt.event import MouseAdapter
 from javax.swing import JMenuItem
 from javax.swing import JPopupMenu
@@ -119,10 +124,23 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         
         # table of log entries
         self.logTable = Table(self)
+
+        #self.logTable.setDefaultRenderer(self.logTable.getColumnClass(0), ColoredTableCellRenderer(self))
+
         self.logTable.setAutoCreateRowSorter(True)
         self.logTable.setRowSelectionAllowed(True)
 
+        renderer = ColoredTableCellRenderer(self)
+        #column = TableColumn(0, 190, renderer, None)
 
+        print 'Initiating... :'
+        print 'columns:' + str(self.logTable.getColumnCount())
+        self.logTable.getColumn("Checked").setCellRenderer(renderer)
+        self.logTable.getColumn("Checked").setPreferredWidth(80)
+        self.logTable.getColumn("Checked").setMaxWidth(80)
+        #self.logTable.getColumn("Checked").sizeWidthToFit()
+        self.logTable.getColumn("Checked").setResizable(True)
+        #self.logTable.addColumn(TableColumn())
 
 
         scrollPane = JScrollPane(self.logTable)
@@ -314,6 +332,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.fireTableRowsInserted(row, row)
         self._lock.release()
 
+        print "columnCoun:" + str(self.logTable.getColumnCount())
+
     #
     # extend AbstractTableModel
     #
@@ -332,11 +352,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             return "Checked"
         if columnIndex == 1:
             return "URL"
-        return ""
+        if columnIndex == 2:
+            return "Other"
+        if columnIndex == 3:
+            return "Otherx"
 
     def getValueAt(self, rowIndex, columnIndex):
         logEntry = self._log.get(rowIndex)
 
+        #self.setBackground(Color.GREEN)
         return self.returnEntry(rowIndex, columnIndex, logEntry)
 
         if self.showNewButton.isSelected() and not(logEntry._analyzed):  
@@ -412,15 +436,31 @@ class Table(JTable):
         self._extender._currentlyDisplayedItem = logEntry._requestResponse
         
         #JTable.changeSelection(self, row, col, toggle, extend)
+
     
 class mouseclick(MouseAdapter):
-
     def __init__(self, extender):
         self._extender = extender
 
     def mouseReleased(self, evt):
         if evt.button == 3:
             self._extender.menu.show(evt.getComponent(), evt.getX(), evt.getY())
+
+
+class ColoredTableCellRenderer(DefaultTableCellRenderer):
+    def __init__(self, extender):
+        self._extender = extender
+
+    def setValue(self, value):
+        if value == "False":
+            self.setBackground(Color.RED)
+            #self.setForeground(Color.RED)
+        elif value == "True":
+            self.setBackground(Color.GREEN)
+            #self.setForeground(Color.GREEN)
+        #return value
+        self.super__setValue(value)
+
 
 #
 # class to hold details of each log entry
