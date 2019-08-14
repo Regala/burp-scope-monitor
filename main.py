@@ -94,17 +94,28 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._config = JTabbedPane()
 
         config = JPanel()
-        config.setLayout(GridLayout(1,3))
-        
 
+        #config.setLayout(BorderLayout())
+        config.setLayout(None)
+        
+        # config radio button
         self.showAllButton = JRadioButton(SHOW_ALL_BUTTON_LABEL, True)
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
+
+        self.showAllButton.setBounds(40, 60, 400, 60)
+        self.showNewButton.setBounds(40, 80, 400, 60)
+        self.showTestedButton.setBounds(40, 100, 400, 60)
+        #self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
+        #self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
 
         self.showAllButton.addActionListener(self.handleRadioConfig)
         self.showNewButton.addActionListener(self.handleRadioConfig)
         self.showTestedButton.addActionListener(self.handleRadioConfig) 
 
+        self.clearButton = JButton("Clear")
+        self.clearButton.addActionListener(self.handleClearButton)
+        self.clearButton.setBounds(40, 20, 100, 30)
 
         bGroup = ButtonGroup()
 
@@ -112,11 +123,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         bGroup.add(self.showNewButton)
         bGroup.add(self.showTestedButton)
 
+        config.add(self.clearButton)
         config.add(self.showAllButton)
         config.add(self.showNewButton)
         config.add(self.showTestedButton)
 
-        self._config.addTab("Config", config)
+
+        self._config.addTab("General", config)
 
         ##### end config pane
 
@@ -150,10 +163,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         # tabs with request/response viewers
         tabs = JTabbedPane()
-        self._requestViewer = callbacks.createMessageEditor(self, True)
-        self._responseViewer = callbacks.createMessageEditor(self, True)
+        self._requestViewer = callbacks.createMessageEditor(self, False)
+        self._responseViewer = callbacks.createMessageEditor(self, False)
         tabs.addTab("Request", self._requestViewer.getComponent())
-        tabs.addTab("Responsex", self._responseViewer.getComponent())
+        tabs.addTab("Response", self._responseViewer.getComponent())
         self._splitpane.setRightComponent(tabs)
 
         ## Row sorter shit 
@@ -162,10 +175,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
         
 
-        markAnalyzedButton = JMenuItem("(local) Mark Requests as Analyzed")
+        markAnalyzedButton = JMenuItem("Mark Requests as Analyzed")
         markAnalyzedButton.addActionListener(markRequestsHandler(self, True))
 
-        markNotAnalyzedButton = JMenuItem("(local) Mark Requests as NOT Analyzed")
+        markNotAnalyzedButton = JMenuItem("Mark Requests as NOT Analyzed")
         markNotAnalyzedButton.addActionListener(markRequestsHandler(self, False))
 
         #sendRequestMenu = JMenuItem("Send Original Request to Repeater")
@@ -202,8 +215,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print 'trying to create menuItems.. (GLOBAL)'
         if responses > 0:
             ret = LinkedList()
-            analyzedMenuItem = JMenuItem("(Global) Mark as analyzed")
-            notAnalyzedMenuItem = JMenuItem("(Global) Mark as NOT analyzed")
+            analyzedMenuItem = JMenuItem("Mark as analyzed")
+            notAnalyzedMenuItem = JMenuItem("Mark as NOT analyzed")
 
             for response in responses:
                 analyzedMenuItem.addActionListener(handleMenuItems(self,response, "analyzed"))
@@ -227,6 +240,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+
+    def handleClearButton(self, event):
+        print 'Clearing table'
+        self._lock.acquire()
+        self._log = ArrayList()
+        self._fullLog = ArrayList()
+        self._lock.release()
+        return
 
     def handleRadioConfig(self, event):
         #print ' radio button clicked '
