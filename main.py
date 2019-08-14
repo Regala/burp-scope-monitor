@@ -46,6 +46,7 @@ from javax.swing.table import TableRowSorter
 from urlparse import *
 
 BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
+BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png']
 
 SHOW_ALL_BUTTON_LABEL = "Show All"
 SHOW_NEW_BUTTON_LABEL = "Show New Only"
@@ -216,7 +217,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         o = urlparse(url_)
 
         url = o.scheme+"://"+o.netloc+o.path
-        print "Url3: " + url
+        #print "Url3: " + url
         return url
 
 
@@ -308,6 +309,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         for extension in BAD_EXTENSIONS:
             if url.endswith(extension):
                 return
+
+        if messageInfo.getResponse():
+            mime = self._helpers.analyzeResponse(messageInfo.getResponse()).getStatedMimeType()
+            print 'Declared mime:' + mime
+            mime = mime.lower()
+            if mime in BAD_MIMES:
+                print 'Bad mime:' + mime
+                return
+
         
         # create a new log entry with the message details
         self._lock.acquire()
@@ -326,13 +336,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             analyzed = True
 
         entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed)
-        print "toolFlag: " + str(toolFlag)
+        #print "toolFlag: " + str(toolFlag)
         self._log.add(entry)
         self._fullLog.add(entry)
         self.fireTableRowsInserted(row, row)
         self._lock.release()
 
-        print "columnCoun:" + str(self.logTable.getColumnCount())
+        #print "columnCoun:" + str(self.logTable.getColumnCount())
 
     #
     # extend AbstractTableModel
@@ -535,8 +545,8 @@ class markRequestsHandler(ActionListener):
                     break
             self._extender._lock.release()
 
-            self._extender.fireTableDataChanged()
-            print 'refreshing view ..... *****'
+        self._extender.fireTableDataChanged()
+        print 'refreshing view ..... *****'
 
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, False, False)
