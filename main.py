@@ -453,10 +453,6 @@ class Table(JTable):
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
         self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
         
-
-        print 'Change Selection, response: '
-        print logEntry._requestResponse.getResponse()
-
         
         #JTable.changeSelection(self, row, col, toggle, extend)
         return
@@ -546,7 +542,9 @@ class markRequestsHandler(ActionListener):
 
         rows = self._extender.logTable.getSelectedRows()
         for row in rows:
-            url = self._extender._log.get(row)._url
+
+            model_row = self._extender.logTable.convertRowIndexToModel(row)
+            url = self._extender._log.get(model_row)._url
 
             print "Changing url: " + url
 
