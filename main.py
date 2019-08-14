@@ -46,7 +46,7 @@ from javax.swing.table import TableRowSorter
 from urlparse import *
 
 BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
-BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png']
+BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
 
 SHOW_ALL_BUTTON_LABEL = "Show All"
 SHOW_NEW_BUTTON_LABEL = "Show New Only"
@@ -76,6 +76,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         
         # create the log and a lock on which to synchronize when adding log entries
 
+        self._currentlyDisplayedItem = None
 
         self.SELECTED_MODEL_ROW = 0
         self.SELECTED_VIEW_ROW = 0
@@ -149,10 +150,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         # tabs with request/response viewers
         tabs = JTabbedPane()
-        self._requestViewer = callbacks.createMessageEditor(self, False)
-        self._responseViewer = callbacks.createMessageEditor(self, False)
+        self._requestViewer = callbacks.createMessageEditor(self, True)
+        self._responseViewer = callbacks.createMessageEditor(self, True)
         tabs.addTab("Request", self._requestViewer.getComponent())
-        tabs.addTab("Response", self._responseViewer.getComponent())
+        tabs.addTab("Responsex", self._responseViewer.getComponent())
         self._splitpane.setRightComponent(tabs)
 
         ## Row sorter shit 
@@ -296,8 +297,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         #print "processing httpMessage.."
         #print messageIsRequest
-        #if messageIsRequest:
-        #    return
+        if messageIsRequest:
+            return
 
         #print "still processing httpMessage.."
 
@@ -312,10 +313,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         if messageInfo.getResponse():
             mime = self._helpers.analyzeResponse(messageInfo.getResponse()).getStatedMimeType()
-            print 'Declared mime:' + mime
+            #print 'Declared mime:' + mime
             mime = mime.lower()
             if mime in BAD_MIMES:
-                print 'Bad mime:' + mime
+                #print 'Bad mime:' + mime
                 return
 
         
@@ -326,7 +327,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         for item in self._log:
             if url == item._url:
-                print 'duplicate url, skipping.. '
+                #print 'duplicate url, skipping.. '
                 self._lock.release()
                 return
 
@@ -334,6 +335,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         analyzed = False
         if self._callbacks.getToolName(toolFlag) == "Repeater":
             analyzed = True
+
+        #print 'in httpmessage, response:'
+        #print self._helpers.analyzeResponse(messageInfo.getResponse())
 
         entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed)
         #print "toolFlag: " + str(toolFlag)
@@ -398,16 +402,19 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     # this allows our request/response viewers to obtain details about the messages being displayed
     #
     
+    
     def getHttpService(self):
         return self._currentlyDisplayedItem.getHttpService()
 
     def getRequest(self):
-        return 
+        print 'getRequest called'
         return self._currentlyDisplayedItem.getRequest()
 
     def getResponse(self):
-        return 
+        print 'getResponse called: '
+        print self._currentlyDisplayedItem.getResponse()
         return self._currentlyDisplayedItem.getResponse()
+    
 
 #
 # extend JTable to handle cell selection
@@ -430,6 +437,8 @@ class Table(JTable):
         # show the log entry for the selected row
         #print 'Selecting entry ' + str(row) + ' in changeSelection: ' 
 
+        JTable.changeSelection(self, row, col, toggle, extend)
+
         modelRow = self.convertRowIndexToModel(row)
         #print 'converted: ' + str()
 
@@ -437,15 +446,20 @@ class Table(JTable):
 
         #print str(self._extender._helpers.analyzeRequest(logEntry._requestResponse).getUrl())
 
-        JTable.changeSelection(self, row, 1, toggle, extend)
         self._extender.SELECTED_MODEL_ROW = modelRow
         self._extender.SELECTED_VIEW_ROW = row
 
-        self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
-        self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), True)
         self._extender._currentlyDisplayedItem = logEntry._requestResponse
+        self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
+        self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
+        
+
+        print 'Change Selection, response: '
+        print logEntry._requestResponse.getResponse()
+
         
         #JTable.changeSelection(self, row, col, toggle, extend)
+        return
 
     
 class mouseclick(MouseAdapter):
