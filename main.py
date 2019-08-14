@@ -389,7 +389,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             else:
                 return "False"
         if columnIndex == 1:
-            return logEntry._url
+            return self._helpers.urlDecode(logEntry._url) 
         return ""
 
 
@@ -442,7 +442,7 @@ class Table(JTable):
         self._extender.SELECTED_VIEW_ROW = row
 
         self._extender._requestViewer.setMessage(logEntry._requestResponse.getRequest(), True)
-        self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), False)
+        self._extender._responseViewer.setMessage(logEntry._requestResponse.getResponse(), True)
         self._extender._currentlyDisplayedItem = logEntry._requestResponse
         
         #JTable.changeSelection(self, row, col, toggle, extend)
@@ -463,10 +463,10 @@ class ColoredTableCellRenderer(DefaultTableCellRenderer):
 
     def setValue(self, value):
         if value == "False":
-            self.setBackground(Color.RED)
+            self.setBackground(Color(255,135,135))
             #self.setForeground(Color.RED)
         elif value == "True":
-            self.setBackground(Color.GREEN)
+            self.setBackground(Color(107,255,127))
             #self.setForeground(Color.GREEN)
         #return value
         self.super__setValue(value)
