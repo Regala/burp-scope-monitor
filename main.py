@@ -254,7 +254,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         
         self.fireTableDataChanged()
-        self._tableRowSorterAutoProxyAutoAction.toggleSortOrder(1)
+        #self._tableRowSorterAutoProxyAutoAction.toggleSortOrder(1)
         #self.toggleSortOrder(2)
         
         #self.logTable.toggleSortOrder(2)
