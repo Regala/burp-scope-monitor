@@ -74,9 +74,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # - quero ver só os novos
         # - quero ver todos
         # 
-        self.BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
-        self.BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
+        self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
+        self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
         
+        self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
+        self.BAD_MIMES      = self.BAD_MIMES_DEFAULT
+
         self.repeaterSetting = True
 
         # create the log and a lock on which to synchronize when adding log entries
@@ -104,6 +107,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.setLayout(None)
         
         # config radio button
+        X_BASE = 40
         Y_OFFSET = 5
         self.showAllButton = JRadioButton(SHOW_ALL_BUTTON_LABEL, True)
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
@@ -124,11 +128,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.clearButton.setBounds(40, 20, 100, 30)
 
         self.badExtensionsLabel = JLabel("Ignore extensions:")
-        self.badExtensionsLabel.setBounds(50, 150, 200, 30)
+        self.badExtensionsLabel.setBounds(X_BASE, 150, 200, 30)
 
         self.badExtensionsText = JTextArea("")
         self.loadBadExtensions()        
-        self.badExtensionsText.setBounds(50, 175, 300, 30)
+        self.badExtensionsText.setBounds(X_BASE, 175, 310, 30)
 
         self.badExtensionsButton = JButton("Save")
         self.badExtensionsButton.addActionListener(self.handleBadExtensionsButton)
@@ -139,11 +143,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.badExtensionsDefaultButton.setBounds(430, 175, 120, 30)
 
         self.badMimesLabel = JLabel("Ignore mime types:")
-        self.badMimesLabel.setBounds(50, 220, 200, 30)
+        self.badMimesLabel.setBounds(X_BASE, 220, 200, 30)
 
         self.badMimesText = JTextArea("")
         self.loadBadMimes() 
-        self.badMimesText.setBounds(50, 245, 300, 30)
+        self.badMimesText.setBounds(X_BASE, 245, 310, 30)
 
         self.badMimesButton = JButton("Save")
         self.badMimesButton.addActionListener(self.handleBadMimesButton)
@@ -344,9 +348,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print self.BAD_EXTENSIONS
 
     def handleBadExtensionsDefaultButton(self, event):
+        self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
+        self.badExtensionsText.setText(", ".join(self.BAD_EXTENSIONS))
         return
 
     def handleBadMimesDefaultButton(self, event):
+        self.BAD_MIMES = self.BAD_MIMES_DEFAULT
+        self.badMimesText.setText(", ".join(self.BAD_MIMES))
         return
 
     def handleBadMimesButton(self, event):
