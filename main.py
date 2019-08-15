@@ -4,6 +4,7 @@ from burp import ITab
 from burp import IHttpListener
 from burp import IMessageEditorController
 from burp import IContextMenuFactory
+from burp import IExtensionStateListener
 from java.awt import Component;
 from java.io import PrintWriter;
 from java.util import ArrayList;
@@ -47,13 +48,14 @@ from javax.swing.table import TableRowSorter
 from urlparse import *
 import datetime 
 import time
+import sched
 
 
 SHOW_ALL_BUTTON_LABEL = "Show All"
 SHOW_NEW_BUTTON_LABEL = "Show New Only"
 SHOW_TEST_BUTTON_LABEL = "Show Tested Only"
 
-class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel, IContextMenuFactory):
+class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel, IContextMenuFactory, IExtensionStateListener):
     
     #
     # implement IBurpExtender
@@ -69,11 +71,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # set our extension name
         callbacks.setExtensionName("Burp Scope Monitor")
 
-        #self._showAllFlag = True
-        #self._showNewOnly = False
-        # - quero ver só os novos
-        # - quero ver todos
-        # 
+
+        self.AUTOSAVE_REQUESTS = 10
+        self.AUTOSAVE_TIMEOUT  = 60
+
         self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
         self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
         
@@ -261,16 +262,27 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         callbacks.customizeUiComponent(tabs)
 
         callbacks.registerContextMenuFactory(self)
+        callbacks.registerExtensionStateListener(self)
         
         # add the custom tab to Burp's UI
         callbacks.addSuiteTab(self)
         
         # register ourselves as an HTTP listener
         callbacks.registerHttpListener(self)
-        
+
+        self.SC = sched.scheduler(time.time, time.sleep)
+        self.SCC = self.SC.enter(10, 1, self.autoSave, (self.SC,))
+        self.SC.run()
+        # wtf
         return
         
     ##### CUSTOM CODE #####
+    def extensionUnloaded(self):
+        print 'extension unloading.. '
+
+        print 'canceling scheduler.. '
+        map(self.SC.cancel, self.SC.queue)
+        return
 
     def loadBadExtensions(self):
         bad = self._callbacks.loadExtensionSetting("badExtensions")
@@ -568,6 +580,21 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print self._currentlyDisplayedItem.getResponse()
         return self._currentlyDisplayedItem.getResponse()
     
+
+    def exportRequest(self, entity, filename):
+        return
+
+    def exportState(self, filename):
+        return
+
+    def loadState(self, filename):
+        return
+
+    def autoSave(self, sc):
+        print 'autosaving.. lol what'
+
+        self.SC.enter(self.AUTOSAVE_TIMEOUT, 1, self.autoSave, (self.SC,))
+        return
 
 #
 # extend JTable to handle cell selection
