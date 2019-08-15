@@ -646,7 +646,7 @@ class markRequestsHandler(ActionListener):
             for item in self._extender._log:
                 if url == item._url:
                     item._analyzed = self._state
-                    break
+                    #break
             self._extender._lock.release()
 
         self._extender.fireTableDataChanged()
