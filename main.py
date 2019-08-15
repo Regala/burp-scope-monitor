@@ -48,8 +48,6 @@ from urlparse import *
 import datetime 
 import time
 
-BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
-BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
 
 SHOW_ALL_BUTTON_LABEL = "Show All"
 SHOW_NEW_BUTTON_LABEL = "Show New Only"
@@ -76,6 +74,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # - quero ver só os novos
         # - quero ver todos
         # 
+        self.BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
+        self.BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
         
         # create the log and a lock on which to synchronize when adding log entries
 
@@ -102,13 +102,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.setLayout(None)
         
         # config radio button
+        Y_OFFSET = 5
         self.showAllButton = JRadioButton(SHOW_ALL_BUTTON_LABEL, True)
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
 
-        self.showAllButton.setBounds(40, 60, 400, 60)
-        self.showNewButton.setBounds(40, 80, 400, 60)
-        self.showTestedButton.setBounds(40, 100, 400, 60)
+        self.showAllButton.setBounds(40, 60 + Y_OFFSET, 400, 40)
+        self.showNewButton.setBounds(40, 80 + Y_OFFSET, 400, 40)
+        self.showTestedButton.setBounds(40, 100 + Y_OFFSET, 400, 40)
         #self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         #self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
 
@@ -131,6 +132,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.badExtensionsButton.addActionListener(self.handleBadExtensionsButton)
         self.badExtensionsButton.setBounds(355, 175, 70, 30)
 
+        self.badExtensionsDefaultButton = JButton("Load Defaults")
+        self.badExtensionsDefaultButton.addActionListener(self.handleBadExtensionsDefaultButton)
+        self.badExtensionsDefaultButton.setBounds(430, 175, 120, 30)
+
         self.badMimesLabel = JLabel("Ignore mime types:")
         self.badMimesLabel.setBounds(50, 220, 200, 30)
 
@@ -141,6 +146,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.badMimesButton = JButton("Save")
         self.badMimesButton.addActionListener(self.handleBadMimesButton)
         self.badMimesButton.setBounds(355, 245, 70, 30)
+
+        self.badMimesDefaultButton = JButton("Load Defaults")
+        self.badMimesDefaultButton.addActionListener(self.handleBadMimesDefaultButton)
+        self.badMimesDefaultButton.setBounds(430, 245, 120, 30)
 
 
         bGroup = ButtonGroup()
@@ -161,6 +170,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.add(self.badMimesButton)
         config.add(self.badMimesText)
         config.add(self.badMimesLabel)
+
+        config.add(self.badExtensionsDefaultButton)
+        config.add(self.badMimesDefaultButton)
 
 
         self._config.addTab("General", config)
@@ -247,18 +259,24 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print 'current: ' + self.badExtensionsText.getText()
         if bad:
             self.badExtensionsText.setText(bad)
+            # transform text to array 
+            bad = bad.replace(" ", "")
+            self.BAD_EXTENSIONS = bad.split(",")
         else:
             print 'no bad extension saved, reverting'
-            self.badExtensionsText.setText("YYxxxxx")
+            self.badExtensionsText.setText(", ".join(self.BAD_EXTENSIONS))
 
     def loadBadMimes(self):
         bad = self._callbacks.loadExtensionSetting("badMimes")
         print 'current: ' + self.badMimesText.getText()
         if bad:
             self.badMimesText.setText(bad)
+
+            bad = bad.replace(" ", "")
+            self.BAD_MIMES = bad.split(",")
         else:
             print 'no bad mimes saved, reverting'
-            self.badMimesText.setText("YYxxxxx")
+            self.badMimesText.setText(", ".join(self.BAD_MIMES))
 
 
 
@@ -296,12 +314,29 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     ##### CUSTOM CODE #####
     def handleBadExtensionsButton(self, event):
+        print "before BAD array: "
+        print self.BAD_EXTENSIONS
+
         extensions = self.badExtensionsText.getText()
         self._callbacks.saveExtensionSetting("badExtensions", extensions)
+        print 'New extensions blocked: ' + extensions 
+        bad = extensions.replace(" ", "")
+        self.BAD_EXTENSIONS = bad.split(",")
+        print "BAD array: "
+        print self.BAD_EXTENSIONS
+
+    def handleBadExtensionsDefaultButton(self, event):
+        return
+
+    def handleBadMimesDefaultButton(self, event):
+        return
 
     def handleBadMimesButton(self, event):
         mimes = self.badMimesText.getText()
         self._callbacks.saveExtensionSetting("badMimes", mimes)
+        print 'New mimes blocked: ' + mimes 
+        bad = mimes.replace(" ", "")
+        self.BAD_MIMES = bad.split(",")
 
     def handleClearButton(self, event):
         print 'Clearing table'
@@ -391,7 +426,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         url = self.getEndpoint(messageInfo)
         method = self.getMethod(messageInfo)
 
-        for extension in BAD_EXTENSIONS:
+        for extension in self.BAD_EXTENSIONS:
             if url.endswith(extension):
                 return
 
@@ -399,7 +434,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             mime = self._helpers.analyzeResponse(messageInfo.getResponse()).getStatedMimeType()
             #print 'Declared mime:' + mime
             mime = mime.lower()
-            if mime in BAD_MIMES:
+            if mime in self.BAD_MIMES:
                 #print 'Bad mime:' + mime
                 return
 
