@@ -389,6 +389,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #    return
 
         url = self.getEndpoint(messageInfo)
+        method = self.getMethod(messageInfo)
 
         for extension in BAD_EXTENSIONS:
             if url.endswith(extension):
@@ -410,9 +411,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         for item in self._log:
             if url == item._url:
-                #print 'duplicate url, skipping.. '
-                self._lock.release()
-                return
+                if method == self._helpers.analyzeRequest(item._requestResponse).getMethod():
+                    print 'duplicate URL+method, skipping.. '
+                    self._lock.release()
+                    return
 
         # reached here, must be new entry
         analyzed = False
