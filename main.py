@@ -45,6 +45,8 @@ from javax.swing import RowFilter
 from java.awt.event import ItemListener
 from javax.swing.table import TableRowSorter
 from urlparse import *
+import datetime 
+import time
 
 BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
 BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
@@ -420,7 +422,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #print 'in httpmessage, response:'
         #print self._helpers.analyzeResponse(messageInfo.getResponse())
 
-        entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed)
+        date = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S %d %b %Y')
+        entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed, date)
         #print "toolFlag: " + str(toolFlag)
         self._log.add(entry)
         self._fullLog.add(entry)
@@ -440,7 +443,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             return 0
 
     def getColumnCount(self):
-        return 3
+        return 4
 
     def getColumnName(self, columnIndex):
         if columnIndex == 0:
@@ -450,7 +453,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         if columnIndex == 2:
             return "Method"
         if columnIndex == 3:
-            return "Otherx"
+            return "Time"
 
     def getValueAt(self, rowIndex, columnIndex):
         logEntry = self._log.get(rowIndex)
@@ -477,6 +480,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             return self._helpers.urlDecode(logEntry._url) 
         if columnIndex == 2:
             return self._helpers.analyzeRequest(logEntry._requestResponse).getMethod()
+        if columnIndex == 3:
+            return logEntry._date
+            # return date
         return ""
 
 
@@ -570,12 +576,13 @@ class ColoredTableCellRenderer(DefaultTableCellRenderer):
 #
 
 class LogEntry:
-    def __init__(self, tool, requestResponse, url, analyzed):
+    def __init__(self, tool, requestResponse, url, analyzed, date):
         self._tool = tool
         self._requestResponse = requestResponse
         self._url = url
         self._displayed = False
         self._analyzed  = analyzed
+        self._date = date 
 
 class CustomTableRowSorter(TableRowSorter):
 
