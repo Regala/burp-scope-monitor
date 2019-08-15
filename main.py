@@ -260,9 +260,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
 
-            
-
-
+        
 
     ## GLOBAL CONTEXT CODE ##
 
@@ -442,7 +440,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             return 0
 
     def getColumnCount(self):
-        return 2
+        return 3
 
     def getColumnName(self, columnIndex):
         if columnIndex == 0:
@@ -450,7 +448,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         if columnIndex == 1:
             return "URL"
         if columnIndex == 2:
-            return "Other"
+            return "Method"
         if columnIndex == 3:
             return "Otherx"
 
@@ -477,6 +475,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 return "False"
         if columnIndex == 1:
             return self._helpers.urlDecode(logEntry._url) 
+        if columnIndex == 2:
+            return self._helpers.analyzeRequest(logEntry._requestResponse).getMethod()
         return ""
 
 
