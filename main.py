@@ -77,6 +77,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.BAD_EXTENSIONS = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
         self.BAD_MIMES      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
         
+        self.repeaterSetting = True
+
         # create the log and a lock on which to synchronize when adding log entries
 
         self._currentlyDisplayedItem = None
@@ -152,6 +154,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.badMimesDefaultButton.setBounds(430, 245, 120, 30)
 
 
+        self.otherLabel = JLabel("Other:")
+        self.otherLabel.setBounds(40, 300, 120, 30)
+
+        self.repeaterOptionButton = JCheckBox("Repeater request automatically marks as analyzed")
+        self.repeaterOptionButton.setSelected(True)
+        self.repeaterOptionButton.addActionListener(self.handleRepeaterOptionButton)
+        self.repeaterOptionButton.setBounds(50, 330, 420, 30)
+
+
         bGroup = ButtonGroup()
 
         bGroup.add(self.showAllButton)
@@ -173,6 +184,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         config.add(self.badExtensionsDefaultButton)
         config.add(self.badMimesDefaultButton)
+
+        config.add(self.otherLabel)
+        config.add(self.repeaterOptionButton)
 
 
         self._config.addTab("General", config)
@@ -313,6 +327,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def handleRepeaterOptionButton(self, event):
+        self.repeaterSetting = self.repeaterOptionButton.isSelected()
+        return
+
     def handleBadExtensionsButton(self, event):
         print "before BAD array: "
         print self.BAD_EXTENSIONS
@@ -454,7 +472,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # reached here, must be new entry
         analyzed = False
         if self._callbacks.getToolName(toolFlag) == "Repeater":
-            analyzed = True
+            if self.repeaterSetting:
+                analyzed = True
 
         #print 'in httpmessage, response:'
         #print self._helpers.analyzeResponse(messageInfo.getResponse())
