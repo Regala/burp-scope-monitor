@@ -75,8 +75,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.AUTOSAVE_REQUESTS = 10
         self.AUTOSAVE_TIMEOUT  = 60
 
-        self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico']
-        self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video']
+        self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico', '.m3u8', '.ts']
+        self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video', 'mp2t']
         
         self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
         self.BAD_MIMES      = self.BAD_MIMES_DEFAULT
@@ -167,6 +167,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.repeaterOptionButton.addActionListener(self.handleRepeaterOptionButton)
         self.repeaterOptionButton.setBounds(50, 330, 420, 30)
 
+        self.saveButton = JButton("Save now")
+        self.saveButton.addActionListener(self.handleSaveButton)
+        self.saveButton.setBounds(630, 245, 120, 30)
+
+        self.loadButton = JButton("Load now")
+        self.loadButton.addActionListener(self.handleLoadButton)
+        self.loadButton.setBounds(730, 245, 120, 30)
+
 
         bGroup = ButtonGroup()
 
@@ -192,6 +200,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         config.add(self.otherLabel)
         config.add(self.repeaterOptionButton)
+
+        config.add(self.saveButton)
+        config.add(self.loadButton)
 
 
         self._config.addTab("General", config)
@@ -343,6 +354,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def handleSaveButton(self, event):
+        self.exportState("test")
+
+    def handleLoadButton(self, event):
+        self.loadState("test")
+
     def handleRepeaterOptionButton(self, event):
         self.repeaterSetting = self.repeaterOptionButton.isSelected()
         return
@@ -499,7 +516,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #print self._helpers.analyzeResponse(messageInfo.getResponse())
 
         date = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S %d %b %Y')
-        entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed, date)
+        entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed, date, method)
         #print "toolFlag: " + str(toolFlag)
         self._log.add(entry)
         self._fullLog.add(entry)
@@ -555,7 +572,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         if columnIndex == 1:
             return self._helpers.urlDecode(logEntry._url) 
         if columnIndex == 2:
-            return self._helpers.analyzeRequest(logEntry._requestResponse).getMethod()
+            return logEntry._method
         if columnIndex == 3:
             return logEntry._date
             # return date
@@ -582,12 +599,47 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     
 
     def exportRequest(self, entity, filename):
-        return
+
+        line = str(entity._analyzed) + ","
+        line = line + entity._url + ","    # URL is encoded so we should be good
+        line = line + entity._method  + ","
+        line = line + entity._date 
+        line = line + '\n'
+
+        print 'Exporting: "' + line + '"'
+        return line
 
     def exportState(self, filename):
+        with open('/tmp/scope.csv', 'w') as f:
+            self._lock.acquire()
+            for item in self._log:
+                line = self.exportRequest(item, "xx")
+                f.write(line)
+
+            f.close()
+            self._lock.release()
         return
 
     def loadState(self, filename):
+        print 'loading state...'
+        filename = '/tmp/scope.csv'
+        with open('/tmp/scope.csv', 'r') as f:
+            self._lock.acquire()
+            lines = f.read().splitlines()
+            for line in lines:
+                data = line.split(",")
+
+                analyzed = False
+                if data[1] == "True":
+                    analyzed = True
+                self._log.add(LogEntry("", None, data[1], analyzed, data[3], data[2]) ) 
+
+                #(self, tool, requestResponse, url, analyzed, date, method):
+
+            self._lock.release()
+        print 'finished loading.. '
+        print 'size: ' + str(self._log.size())
+        self.fireTableDataChanged()
         return
 
     def autoSave(self, sc):
@@ -667,13 +719,14 @@ class ColoredTableCellRenderer(DefaultTableCellRenderer):
 #
 
 class LogEntry:
-    def __init__(self, tool, requestResponse, url, analyzed, date):
+    def __init__(self, tool, requestResponse, url, analyzed, date, method):
         self._tool = tool
         self._requestResponse = requestResponse
         self._url = url
         self._displayed = False
         self._analyzed  = analyzed
         self._date = date 
+        self._method = method
 
 class CustomTableRowSorter(TableRowSorter):
 
