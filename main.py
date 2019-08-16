@@ -173,19 +173,21 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.saveButton = JButton("Save now")
         self.saveButton.addActionListener(self.handleSaveButton)
-        self.saveButton.setBounds(630, 245, 120, 30)
+        self.saveButton.setBounds(X_BASE + 310, 95, 90, 30)
 
         self.loadButton = JButton("Load now")
         self.loadButton.addActionListener(self.handleLoadButton)
-        self.loadButton.setBounds(730, 245, 120, 30)
+        self.loadButton.setBounds(X_BASE + 420, 95, 90, 30)
 
         self.selectPath = JButton("Select path")
         self.selectPath.addActionListener(self.selectExportFile)
-        self.selectPath.setBounds(430, 245, 120, 30)
+        self.selectPath.setBounds(X_BASE + 530, 60, 120, 30)
 
         self.selectPathText = JTextArea("")
-        self.selectPathText.setBounds(230, 245, 500, 30)
+        self.selectPathText.setBounds(X_BASE, 60, 510, 30)
 
+        self.selectPathLabel = JLabel("State file:")
+        self.selectPathLabel.setBounds(X_BASE, 30, 200, 30)
 
         bGroup = ButtonGroup()
 
@@ -216,6 +218,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         iexport.add(self.loadButton)
         iexport.add(self.selectPath)
         iexport.add(self.selectPathText)
+        iexport.add(self.selectPathLabel)
 
 
         self._config.addTab("General", config)
