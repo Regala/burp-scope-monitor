@@ -173,7 +173,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.saveButton = JButton("Save now")
         self.saveButton.addActionListener(self.handleSaveButton)
-        self.saveButton.setBounds(X_BASE + 310, 95, 90, 30)
+        self.saveButton.setBounds(X_BASE + 320, 95, 90, 30)
 
         self.loadButton = JButton("Load now")
         self.loadButton.addActionListener(self.handleLoadButton)
