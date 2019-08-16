@@ -241,8 +241,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         renderer = ColoredTableCellRenderer(self)
         #column = TableColumn(0, 190, renderer, None)
 
-        print 'Initiating... :'
-        print 'columns:' + str(self.logTable.getColumnCount())
+        print 'Initiating... '
+        #print 'columns:' + str(self.logTable.getColumnCount())
         self.logTable.getColumn("Checked").setCellRenderer(renderer)
         self.logTable.getColumn("Checked").setPreferredWidth(80)
         self.logTable.getColumn("Checked").setMaxWidth(80)
@@ -709,7 +709,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
 
     def autoSave(self, sc):
-        print 'autosaving.. lol what'
+        #print 'autosaving.. lol what'
 
         self.SC.enter(self.AUTOSAVE_TIMEOUT, 1, self.autoSave, (self.SC,))
         return
