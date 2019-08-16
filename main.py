@@ -14,6 +14,8 @@ from javax.swing import JScrollPane;
 from javax.swing import JSplitPane;
 from javax.swing import JTabbedPane;
 from javax.swing import JTable;
+from javax.swing import JFrame;
+from javax.swing import JFileChooser;
 from javax.swing import SwingUtilities;
 from javax.swing.table import AbstractTableModel;
 from javax.swing.table import DefaultTableCellRenderer;
@@ -103,9 +105,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._config = JTabbedPane()
 
         config = JPanel()
+        iexport = JPanel()
 
         #config.setLayout(BorderLayout())
         config.setLayout(None)
+        iexport.setLayout(None)
         
         # config radio button
         X_BASE = 40
@@ -175,6 +179,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.loadButton.addActionListener(self.handleLoadButton)
         self.loadButton.setBounds(730, 245, 120, 30)
 
+        self.selectPath = JButton("Select path")
+        self.selectPath.addActionListener(self.selectExportFile)
+        self.selectPath.setBounds(430, 245, 120, 30)
+
+        self.selectPathText = JTextArea("")
+        self.selectPathText.setBounds(230, 245, 500, 30)
+
 
         bGroup = ButtonGroup()
 
@@ -201,11 +212,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.add(self.otherLabel)
         config.add(self.repeaterOptionButton)
 
-        config.add(self.saveButton)
-        config.add(self.loadButton)
+        iexport.add(self.saveButton)
+        iexport.add(self.loadButton)
+        iexport.add(self.selectPath)
+        iexport.add(self.selectPathText)
 
 
         self._config.addTab("General", config)
+        self._config.addTab("Import/Export", iexport)
 
         ##### end config pane
 
@@ -288,6 +302,25 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
         
     ##### CUSTOM CODE #####
+    def selectExportFile(self, event):
+        parentFrame = JFrame()
+        fileChooser = JFileChooser()
+        fileChooser.setDialogTitle("Specify file to save state")
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
+
+        userSelection = fileChooser.showOpenDialog(parentFrame)
+
+        if (userSelection == JFileChooser.APPROVE_OPTION):
+            fileLoad = fileChooser.getSelectedFile()
+            filename = fileLoad.getAbsolutePath()
+
+            self.selectPathText.setText(filename)
+            print 'Filename selected:' + filename
+            self._callbacks.saveExtensionSetting("exportFile", filename)
+
+        return
+
+
     def extensionUnloaded(self):
         print 'extension unloading.. '
 
@@ -358,7 +391,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.exportState("test")
 
     def handleLoadButton(self, event):
-        self.loadState("test")
+        self.importState("test")
 
     def handleRepeaterOptionButton(self, event):
         self.repeaterSetting = self.repeaterOptionButton.isSelected()
@@ -610,7 +643,17 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return line
 
     def exportState(self, filename):
-        with open('/tmp/scope.csv', 'w') as f:
+        filename = self.selectPathText.getText()
+
+        if filename == "":
+            filename = self._callbacks.loadExtensionSetting("exportFile")
+            print 'Empty filename, skipping export'
+            return 
+        else:
+            self._callbacks.saveExtensionSetting("exportFile", filename)
+
+        print 'saving state to: ' + filename
+        with open(filename, 'w') as f:
             self._lock.acquire()
             for item in self._log:
                 line = self.exportRequest(item, "xx")
@@ -620,10 +663,18 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self._lock.release()
         return
 
-    def loadState(self, filename):
-        print 'loading state...'
-        filename = '/tmp/scope.csv'
-        with open('/tmp/scope.csv', 'r') as f:
+    def importState(self, filename):
+        filename = self.selectPathText.getText()
+
+        if filename == "":
+            filename = self._callbacks.loadExtensionSetting("exportFile")
+            print 'Empty filename, skipping import'
+            return 
+        else:
+            self._callbacks.saveExtensionSetting("exportFile", filename)
+
+        print 'loading state from: ' + filename
+        with open(filename, 'r') as f:
             self._lock.acquire()
 
             proxy = self._callbacks.getProxyHistory()
