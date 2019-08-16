@@ -625,14 +625,26 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         filename = '/tmp/scope.csv'
         with open('/tmp/scope.csv', 'r') as f:
             self._lock.acquire()
+
+            proxy = self._callbacks.getProxyHistory()
             lines = f.read().splitlines()
             for line in lines:
                 data = line.split(",")
+                url = data[1]
+
 
                 analyzed = False
-                if data[1] == "True":
+                if data[0] == "True":
                     analyzed = True
-                self._log.add(LogEntry("", None, data[1], analyzed, data[3], data[2]) ) 
+
+                requestResponse = None
+                for request in proxy:
+                    if url == self.getEndpoint(request):
+                        print 'Match found when importing for url: ' + url
+                        requestResponse = request
+                        break
+
+                self._log.add(LogEntry("", requestResponse, url, analyzed, data[3], data[2]) ) 
 
                 #(self, tool, requestResponse, url, analyzed, date, method):
 
