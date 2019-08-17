@@ -76,6 +76,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.AUTOSAVE_REQUESTS = 10
         self.AUTOSAVE_TIMEOUT  = 60
+        self.CONFIG_INSCOPE    = True
 
         self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico', '.m3u8', '.ts']
         self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video', 'mp2t']
@@ -171,6 +172,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.repeaterOptionButton.addActionListener(self.handleRepeaterOptionButton)
         self.repeaterOptionButton.setBounds(50, 330, 420, 30)
 
+        self.scopeOptionButton = JCheckBox("Follow Target in scope rules")
+        self.scopeOptionButton.setSelected(True)
+        self.scopeOptionButton.addActionListener(self.handleScopeOptionButton)
+        self.scopeOptionButton.setBounds(50, 350, 420, 30)
+
         self.saveButton = JButton("Save now")
         self.saveButton.addActionListener(self.handleSaveButton)
         self.saveButton.setBounds(X_BASE + 320, 95, 90, 30)
@@ -213,6 +219,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         config.add(self.otherLabel)
         config.add(self.repeaterOptionButton)
+        config.add(self.scopeOptionButton)
 
         iexport.add(self.saveButton)
         iexport.add(self.loadButton)
@@ -400,6 +407,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.repeaterSetting = self.repeaterOptionButton.isSelected()
         return
 
+    def handleScopeOptionButton(self, event):
+        self.CONFIG_INSCOPE = self.scopeOptionButton.isSelected()
+        self._callbacks.saveExtensionSetting("CONFIG_INSCOPE", self.CONFIG_INSCOPE)
+        return 
+
     def handleBadExtensionsButton(self, event):
         print "before BAD array: "
         print self.BAD_EXTENSIONS
@@ -508,6 +520,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #print messageIsRequest
         if messageIsRequest:
             return
+
+
+        if self.scopeOptionButton.isSelected():
+            url = self._helpers.analyzeRequest(messageInfo).getUrl()
+            if not self._callbacks.isInScope(url):
+                print 'Url not in scope, skipping.. '
+                return
 
         #print "still processing httpMessage.."
 
