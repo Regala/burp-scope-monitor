@@ -306,10 +306,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         sendRequestMenu = JMenuItem("Send Request to Repeater")
         sendRequestMenu.addActionListener(sendRequestRepeater(self))
 
+        deleteRequestMenu = JMenuItem("Delete request")
+        deleteRequestMenu.addActionListener(deleteRequestHandler(self))
+
         self.menu = JPopupMenu("Popup")
         self.menu.add(markAnalyzedButton)
         self.menu.add(markNotAnalyzedButton)
         self.menu.add(sendRequestMenu)
+        self.menu.add(deleteRequestMenu)
 
         # customize our UI components
         callbacks.customizeUiComponent(self._parentPane)
@@ -879,7 +883,26 @@ class CustomTableRowSorter(TableRowSorter):
         except:
             pass
 
+class deleteRequestHandler(ActionListener):
+    def __init__(self, extender):
+        self._extender = extender
 
+    def actionPerformed(self, e):
+        print "COPY SELECTED URL HANDLER ******"
+
+        rows = self._extender.logTable.getSelectedRows()
+        to_delete = []
+
+        for row in rows:
+
+            model_row = self._extender.logTable.convertRowIndexToModel(row)
+
+            self._extender._log.remove(self._extender._log.get(model_row))
+
+        self._extender.fireTableDataChanged()
+        print 'refreshing view ..... *****'
+
+        return 
 
 class sendRequestRepeater(ActionListener):
     def __init__(self, extender):
