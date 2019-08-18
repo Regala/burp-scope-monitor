@@ -333,6 +333,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # register ourselves as an HTTP listener
         callbacks.registerHttpListener(self)
 
+
+        self.loadConfigs()
+
         self.SC = sched.scheduler(time.time, time.sleep)
         self.SCC = self.SC.enter(10, 1, self.autoSave, (self.SC,))
         self.SC.run()
@@ -340,6 +343,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
         
     ##### CUSTOM CODE #####
+    def loadConfigs(self):
+
+        self.selectPathText.setText(self._callbacks.loadExtensionSetting("exportFile"))
+
+
+        return
 
     def selectExportFile(self, event):
         parentFrame = JFrame()
@@ -460,11 +469,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def handleBadExtensionsDefaultButton(self, event):
         self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
         self.badExtensionsText.setText(", ".join(self.BAD_EXTENSIONS))
+        self._callbacks.saveExtensionSetting("badExtensions", ", ".join(self.BAD_EXTENSIONS))
         return
 
     def handleBadMimesDefaultButton(self, event):
         self.BAD_MIMES = self.BAD_MIMES_DEFAULT
         self.badMimesText.setText(", ".join(self.BAD_MIMES))
+        self._callbacks.saveExtensionSetting("badExtensions", ", ".join(self.BAD_MIMES))
         return
 
     def handleBadMimesButton(self, event):
