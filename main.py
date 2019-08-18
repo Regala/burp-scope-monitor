@@ -52,10 +52,15 @@ import datetime
 import time
 import sched
 
+RED_COLOR = Color(255,135,135) 
+GREEN_COLOR = Color(107,255,127)
 
 SHOW_ALL_BUTTON_LABEL = "Show All"
 SHOW_NEW_BUTTON_LABEL = "Show New Only"
 SHOW_TEST_BUTTON_LABEL = "Show Tested Only"
+
+MONITOR_ON_LABEL = "Monitor is ON"
+MONITOR_OFF_LABEL = "Monitor is OFF"
 
 class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel, IContextMenuFactory, IExtensionStateListener):
     
@@ -137,6 +142,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.clearButton.addActionListener(self.handleClearButton)
         self.clearButton.setBounds(40, 20, 100, 30)
 
+        self.startButton = JButton(MONITOR_ON_LABEL)
+        self.startButton.addActionListener(self.handleStartButton)
+        self.startButton.setBounds(150, 20, 200, 30)
+        self.startOrStop(None)
+
         self.badExtensionsLabel = JLabel("Ignore extensions:")
         self.badExtensionsLabel.setBounds(X_BASE, 150, 200, 30)
 
@@ -214,6 +224,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         bGroup.add(self.showTestedButton)
 
         config.add(self.clearButton)
+        config.add(self.startButton)
         config.add(self.showAllButton)
         config.add(self.showNewButton)
         config.add(self.showTestedButton)
@@ -435,6 +446,20 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def startOrStop(self, event):
+        if self.startButton.getText() == MONITOR_OFF_LABEL:
+            self.startButton.setText(MONITOR_ON_LABEL)
+            self.startButton.setBackground(GREEN_COLOR)
+            self.STATUS = True
+        else:
+            self.startButton.setText(MONITOR_OFF_LABEL)
+            self.startButton.setBackground(RED_COLOR)
+            self.STATUS = False
+
+    def handleStartButton(self, event):
+        self.startOrStop(event)
+
+
     def handleAutoSaveOption(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_AUTOSAVE", str(self.autoSaveOption.isSelected()))
         return
@@ -562,6 +587,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         #print "processing httpMessage.."
         #print messageIsRequest
+        if not(self.STATUS):
+            return
+
+
         if messageIsRequest:
             return
 
@@ -718,7 +747,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         else:
             self._callbacks.saveExtensionSetting("exportFile", filename)
 
-        print 'saving state to: ' + filename
+        #print 'saving state to: ' + filename
         with open(filename, 'w') as f:
             self._lock.acquire()
             for item in self._log:
@@ -774,10 +803,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def autoSave(self, sc):
         #print 'autosaving.. lol what'
         if self.autoSaveOption.isSelected():
-            print "Autosaving to.. "
+            print "[" + self.getTime() + "] autosaving to " + self._callbacks.loadExtensionSetting("exportFile")
+            self.exportState("")
 
         self.SC.enter(self.AUTOSAVE_TIMEOUT, 1, self.autoSave, (self.SC,))
         return
+
+    def getTime(self):
+        date = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
+        return date
 
 #
 # extend JTable to handle cell selection
