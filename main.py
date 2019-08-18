@@ -768,7 +768,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def exportRequest(self, entity, filename):
 
         line = str(entity._analyzed) + ","
-        line = line + entity._url + ","    # URL is encoded so we should be good
+        line = line + self._helpers.urlEncode(entity._url).replace(",", "%2c") + ","    # URL is encoded so we should be good
         line = line + entity._method  + ","
         line = line + entity._date 
         line = line + '\n'
@@ -819,7 +819,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             for line in lines:
                 data = line.split(",")
                 url = data[1]
+                url = self._helpers.urlDecode(url) 
 
+                print 'Saving: ' + url
 
                 analyzed = False
                 if data[0] == "True":
