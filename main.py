@@ -78,7 +78,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # set our extension name
         callbacks.setExtensionName("Burp Scope Monitor")
 
-
+        self.STATUS = False
         self.AUTOSAVE_REQUESTS = 10
         self.AUTOSAVE_TIMEOUT  = 60
         self.CONFIG_INSCOPE    = True
@@ -121,6 +121,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         X_BASE = 40
         Y_OFFSET = 5
         Y_OPTION = 200
+        Y_OPTION_SPACING = 20
         Y_CHECKMARK_SPACING = 20
 
 
@@ -145,7 +146,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.startButton = JButton(MONITOR_ON_LABEL)
         self.startButton.addActionListener(self.handleStartButton)
         self.startButton.setBounds(150, 20, 200, 30)
-        self.startOrStop(None)
 
         self.badExtensionsLabel = JLabel("Ignore extensions:")
         self.badExtensionsLabel.setBounds(X_BASE, 150, 200, 30)
@@ -199,6 +199,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.scopeOptionButton.addActionListener(self.handleScopeOptionButton)
         self.scopeOptionButton.setBounds(50, 350, 420, 30)
 
+        self.startOptionButton = JCheckBox("Autostart Scope Monitor")
+        self.startOptionButton.setSelected(True)
+        self.startOptionButton.addActionListener(self.handleStartOption)
+        self.startOptionButton.setBounds(50, 350 + Y_OPTION_SPACING, 420, 30)
+
+
         self.saveButton = JButton("Save now")
         self.saveButton.addActionListener(self.handleSaveButton)
         self.saveButton.setBounds(X_BASE + 320, 95, 90, 30)
@@ -225,6 +231,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         config.add(self.clearButton)
         config.add(self.startButton)
+        config.add(self.startOptionButton)
         config.add(self.showAllButton)
         config.add(self.showNewButton)
         config.add(self.showTestedButton)
@@ -344,7 +351,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # register ourselves as an HTTP listener
         callbacks.registerHttpListener(self)
 
-
         self.loadConfigs()
 
         self.SC = sched.scheduler(time.time, time.sleep)
@@ -356,7 +362,32 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     ##### CUSTOM CODE #####
     def loadConfigs(self):
 
+        if self._callbacks.loadExtensionSetting("CONFIG_AUTOSTART") == "True":
+            self.startOptionButton.setSelected(True)
+            self.startOrStop(None, True)
+        else:
+            self.startOptionButton.setSelected(False)
+            self.startOrStop(None, False)
+
         self.selectPathText.setText(self._callbacks.loadExtensionSetting("exportFile"))
+
+        if self._callbacks.loadExtensionSetting("CONFIG_REPEATER") == "True":
+            self.repeaterOptionButton.setSelected(True)
+        else:
+            self.repeaterOptionButton.setSelected(False)
+
+        if self._callbacks.loadExtensionSetting("CONFIG_INSCOPE") == "True":
+            self.scopeOptionButton.setSelected(True)
+        else:
+            self.scopeOptionButton.setSelected(False)
+
+        if self._callbacks.loadExtensionSetting("CONFIG_AUTOSAVE") == "True":
+            self.autoSaveOption.setSelected(True)
+        else:
+            self.autoSaveOption.setSelected(False)
+            
+
+
 
 
         return
@@ -446,8 +477,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
-    def startOrStop(self, event):
-        if self.startButton.getText() == MONITOR_OFF_LABEL:
+    def handleStartOption(self, event):
+        self._callbacks.saveExtensionSetting("CONFIG_AUTOSTART", str(self.startOptionButton.isSelected()))
+        print 'saving autostart: ' + str(self.startOptionButton.isSelected())
+        return
+
+    def startOrStop(self, event, autoStart):
+        print 'inside strtorstop'
+        print 'status: ' + str(self.startOptionButton.isSelected())
+        if (self.startButton.getText() == MONITOR_OFF_LABEL) or autoStart:
             self.startButton.setText(MONITOR_ON_LABEL)
             self.startButton.setBackground(GREEN_COLOR)
             self.STATUS = True
@@ -457,8 +495,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self.STATUS = False
 
     def handleStartButton(self, event):
-        self.startOrStop(event)
-
+        print 'in handleStartButton'
+        self.startOrStop(event, False)
 
     def handleAutoSaveOption(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_AUTOSAVE", str(self.autoSaveOption.isSelected()))
@@ -472,6 +510,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def handleRepeaterOptionButton(self, event):
         self.repeaterSetting = self.repeaterOptionButton.isSelected()
+        self._callbacks.saveExtensionSetting("CONFIG_REPEATER", str(self.repeaterOptionButton.isSelected()))
         return
 
     def handleScopeOptionButton(self, event):
@@ -748,7 +787,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self._callbacks.saveExtensionSetting("exportFile", filename)
 
         #print 'saving state to: ' + filename
-        with open(filename, 'w') as f:
+        with open(filename, 'a') as f:
             self._lock.acquire()
             for item in self._log:
                 line = self.exportRequest(item, "xx")
@@ -769,6 +808,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self._callbacks.saveExtensionSetting("exportFile", filename)
 
         print 'loading state from: ' + filename
+
+        self.STATUS = False
+
         with open(filename, 'r') as f:
             self._lock.acquire()
 
@@ -798,6 +840,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print 'finished loading.. '
         print 'size: ' + str(self._log.size())
         self.fireTableDataChanged()
+
+        self.STATUS = True
+
         return
 
     def autoSave(self, sc):
