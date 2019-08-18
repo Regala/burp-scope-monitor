@@ -115,6 +115,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # config radio button
         X_BASE = 40
         Y_OFFSET = 5
+        Y_OPTION = 200
+        Y_CHECKMARK_SPACING = 20
+
+
         self.showAllButton = JRadioButton(SHOW_ALL_BUTTON_LABEL, True)
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
@@ -166,6 +170,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.otherLabel = JLabel("Other:")
         self.otherLabel.setBounds(40, 300, 120, 30)
+
+        self.otherLabel2 = JLabel("Other:")
+        self.otherLabel2.setBounds(X_BASE, Y_OPTION, 120, 30)
+
+        self.autoSaveOption = JCheckBox("Auto save periodically")
+        self.autoSaveOption.setSelected(True)
+        self.autoSaveOption.addActionListener(self.handleAutoSaveOption)
+        self.autoSaveOption.setBounds(X_BASE, Y_OPTION + Y_CHECKMARK_SPACING, 420, 30)
 
         self.repeaterOptionButton = JCheckBox("Repeater request automatically marks as analyzed")
         self.repeaterOptionButton.setSelected(True)
@@ -226,6 +238,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         iexport.add(self.selectPath)
         iexport.add(self.selectPathText)
         iexport.add(self.selectPathLabel)
+        iexport.add(self.otherLabel2)
+        iexport.add(self.autoSaveOption)
 
 
         self._config.addTab("General", config)
@@ -249,13 +263,21 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #column = TableColumn(0, 190, renderer, None)
 
         print 'Initiating... '
-        #print 'columns:' + str(self.logTable.getColumnCount())
+
+        # this could be improved by fetching initial dimensions
+        self.logTable.getColumn("URL").setPreferredWidth(720) # noscope
+        self.logTable.getColumn("URL").setResizable(True)
+
         self.logTable.getColumn("Checked").setCellRenderer(renderer)
         self.logTable.getColumn("Checked").setPreferredWidth(80)
         self.logTable.getColumn("Checked").setMaxWidth(80)
-        #self.logTable.getColumn("Checked").sizeWidthToFit()
-        self.logTable.getColumn("Checked").setResizable(True)
-        #self.logTable.addColumn(TableColumn())
+
+        self.logTable.getColumn("Method").setPreferredWidth(120)
+        #self.logTable.getColumn("Method").setMaxWidth(120)
+        self.logTable.getColumn("Method").setResizable(True)
+
+        self.logTable.getColumn("Time").setPreferredWidth(120) # noscope
+        self.logTable.getColumn("Time").setResizable(True)
 
 
         scrollPane = JScrollPane(self.logTable)
@@ -281,11 +303,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         markNotAnalyzedButton = JMenuItem("Mark Requests as NOT Analyzed")
         markNotAnalyzedButton.addActionListener(markRequestsHandler(self, False))
 
-        #sendRequestMenu = JMenuItem("Send Original Request to Repeater")
-        #sendRequestMenu.addActionListener(sendRequestRepeater(self, self._callbacks, True))
+        sendRequestMenu = JMenuItem("Send Request to Repeater")
+        sendRequestMenu.addActionListener(sendRequestRepeater(self))
+
         self.menu = JPopupMenu("Popup")
         self.menu.add(markAnalyzedButton)
         self.menu.add(markNotAnalyzedButton)
+        self.menu.add(sendRequestMenu)
 
         # customize our UI components
         callbacks.customizeUiComponent(self._parentPane)
@@ -312,6 +336,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
         
     ##### CUSTOM CODE #####
+
     def selectExportFile(self, event):
         parentFrame = JFrame()
         fileChooser = JFileChooser()
@@ -397,6 +422,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def handleAutoSaveOption(self, event):
+        self._callbacks.saveExtensionSetting("CONFIG_AUTOSAVE", str(self.autoSaveOption.isSelected()))
+        return
+
     def handleSaveButton(self, event):
         self.exportState("test")
 
@@ -409,7 +438,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def handleScopeOptionButton(self, event):
         self.CONFIG_INSCOPE = self.scopeOptionButton.isSelected()
-        self._callbacks.saveExtensionSetting("CONFIG_INSCOPE", self.CONFIG_INSCOPE)
+        self._callbacks.saveExtensionSetting("CONFIG_INSCOPE", str(self.CONFIG_INSCOPE))
         return 
 
     def handleBadExtensionsButton(self, event):
@@ -729,6 +758,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def autoSave(self, sc):
         #print 'autosaving.. lol what'
+        if self.autoSaveOption.isSelected():
+            print "Autosaving to.. "
 
         self.SC.enter(self.AUTOSAVE_TIMEOUT, 1, self.autoSave, (self.SC,))
         return
@@ -850,6 +881,31 @@ class CustomTableRowSorter(TableRowSorter):
 
 
 
+class sendRequestRepeater(ActionListener):
+    def __init__(self, extender):
+        self._extender = extender
+
+    def actionPerformed(self, e):
+        print "COPY SELECTED URL HANDLER ******"
+
+        rows = self._extender.logTable.getSelectedRows()
+        for row in rows:
+
+            model_row = self._extender.logTable.convertRowIndexToModel(row)
+
+            request = self._extender._log.get(model_row)._requestResponse
+            url = self._extender._log.get(model_row)._url
+
+            host = request.getHttpService().getHost()
+            port = request.getHttpService().getPort()
+            proto = request.getHttpService().getProtocol()
+
+            secure = True if proto == 'https' else False
+            
+            self._extender._callbacks.sendToRepeater(host, port, secure, request.getRequest(), None);
+
+        return 
+
 class markRequestsHandler(ActionListener):
     def __init__(self, extender, state):
         self._extender = extender
@@ -884,6 +940,7 @@ class markRequestsHandler(ActionListener):
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
 
         return 
+
 
 ### GLOBAL CONTEXT #### 
 class handleMenuItems(ActionListener):
