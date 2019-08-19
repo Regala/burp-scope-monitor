@@ -13,7 +13,7 @@ Wether you're a bug bounty hunter, pentester or researcher taking a crack at a w
 - Accessible from Proxy tab (right click, mark request as analyzed/not)
 - Send to Repeater convenience
 - Enforcment of Burp's in scope rules 
-- Import/Export state file directly to a CSV file for convenience
+- Import/Export state file directly to a CSV file for
 - Autosave option
 
 ## Installation
