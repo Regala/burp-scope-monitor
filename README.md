@@ -13,7 +13,7 @@ A Burp Suite Extension to monitor and keep track of tested endpoints.
 - Import/Export state file directly to a CSV file for convenience
 - Autosave option
 
-## Install 
+## Installation
 
 1. Make sure you have Jython configured under Extender -> Options -> Python Environment. For further instructions, check PortSwigger official instructions at their [support page](https://support.portswigger.net/customer/portal/articles/1965930-how-to-install-an-extension-in-burp-suite).
 2. `git clone git@github.com:Regala/burp-scope-monitor.git`
