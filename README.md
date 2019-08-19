@@ -19,6 +19,14 @@ A Burp Suite Extension to monitor and keep track of tested endpoints.
 2. `git clone git@github.com:Regala/burp-scope-monitor.git`
 3. Import [main.py](main.py) in Extender - Extender -> Extensions -> Add -> Select Python -> Select [main.py](main.py)
 
+## Documentation
+
+Most of the options available in General or Import tabs are auto-explanatory. 
+
+- *"Repeater request automatically marks as analyzed"* - when issuing a request to an endpoint from repeater, it marks this request as analyzed automatically.
+- *"Color request in Proxy tab"* - this essentially applies the behavior of the extension in the Proxy tab, if you combine these options with "Show only highlighted items" in Proxy. However, it's not as pleasant to the eyes as the color pallete is limited. 
+- *"Autosave periodically"* - backups the state file every 10 minutes. When activating this option, consider disabling "Autostart Scope Monitor". This is in order to maintain a different state file per Burp project. However, you can easily maintain only one, master state file.
+
 ## Future Development
 
 - Keep track of parameters observed in all requests
