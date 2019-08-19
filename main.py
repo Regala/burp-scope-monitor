@@ -82,7 +82,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.STATUS = False
         self.AUTOSAVE_REQUESTS = 10
-        self.AUTOSAVE_TIMEOUT  = 60
+        self.AUTOSAVE_TIMEOUT  = 600 # 10 minutes should be fine
         self.CONFIG_INSCOPE    = True
 
         self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico', '.m3u8', '.ts']
@@ -196,7 +196,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.repeaterOptionButton.addActionListener(self.handleRepeaterOptionButton)
         self.repeaterOptionButton.setBounds(50, 330, 420, 30)
 
-        self.scopeOptionButton = JCheckBox("Follow Target in scope rules")
+        self.scopeOptionButton = JCheckBox("Follow Burp Target In Scope rules")
         self.scopeOptionButton.setSelected(True)
         self.scopeOptionButton.addActionListener(self.handleScopeOptionButton)
         self.scopeOptionButton.setBounds(50, 350, 420, 30)
@@ -211,7 +211,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.markTestedRequestsProxy.addActionListener(self.handleTestedRequestsProxy)
         self.markTestedRequestsProxy.setBounds(50, 350 + Y_OPTION_SPACING*2, 420, 30)
 
-        self.markNotTestedRequestsProxy = JCheckBox("Color request in Proxy tab if NOT analyzed (new)")
+        self.markNotTestedRequestsProxy = JCheckBox("Color request in Proxy tab if NOT analyzed")
         self.markNotTestedRequestsProxy.setSelected(True)
         self.markNotTestedRequestsProxy.addActionListener(self.handleNotTestedRequestsProxy)
         self.markNotTestedRequestsProxy.setBounds(50, 350 + Y_OPTION_SPACING*3, 420, 30)
@@ -367,10 +367,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.loadConfigs()
 
+        print "Loaded!"
         self.SC = sched.scheduler(time.time, time.sleep)
         self.SCC = self.SC.enter(10, 1, self.autoSave, (self.SC,))
         self.SC.run()
-        # wtf
+
         return
         
     ##### CUSTOM CODE #####
@@ -383,7 +384,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self.startOptionButton.setSelected(False)
             self.startOrStop(None, False)
 
-        self.selectPathText.setText(self._callbacks.loadExtensionSetting("exportFile"))
+        if self._callbacks.loadExtensionSetting("exportFile") != "":
+            self.selectPathText.setText(self._callbacks.loadExtensionSetting("exportFile"))
 
         if self._callbacks.loadExtensionSetting("CONFIG_REPEATER") == "True":
             self.repeaterOptionButton.setSelected(True)
@@ -444,7 +446,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def loadBadExtensions(self):
         bad = self._callbacks.loadExtensionSetting("badExtensions")
-        print 'current: ' + self.badExtensionsText.getText()
         if bad:
             self.badExtensionsText.setText(bad)
             # transform text to array 
@@ -456,7 +457,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def loadBadMimes(self):
         bad = self._callbacks.loadExtensionSetting("badMimes")
-        print 'current: ' + self.badMimesText.getText()
         if bad:
             self.badMimesText.setText(bad)
 
@@ -517,8 +517,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
 
     def startOrStop(self, event, autoStart):
-        print 'inside strtorstop'
-        print 'status: ' + str(self.startOptionButton.isSelected())
         if (self.startButton.getText() == MONITOR_OFF_LABEL) or autoStart:
             self.startButton.setText(MONITOR_ON_LABEL)
             self.startButton.setBackground(GREEN_COLOR)
@@ -816,7 +814,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         line = line + entity._date 
         line = line + '\n'
 
-        print 'Exporting: "' + line + '"'
+        #print 'Exporting: "' + line + '"'
         return line
 
     def exportState(self, filename):
