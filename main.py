@@ -62,6 +62,8 @@ SHOW_TEST_BUTTON_LABEL = "Show Tested Only"
 MONITOR_ON_LABEL = "Monitor is ON"
 MONITOR_OFF_LABEL = "Monitor is OFF"
 
+SCOPE_MONITOR_COMMENT = "scope-monitor-placeholder"
+
 class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel, IContextMenuFactory, IExtensionStateListener):
     
     #
@@ -673,6 +675,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     self._lock.release()
                     return
 
+        messageInfo.setComment(SCOPE_MONITOR_COMMENT)
         # reached here, must be new entry
         analyzed = False
         if self._callbacks.getToolName(toolFlag) == "Repeater":
@@ -815,6 +818,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self._lock.acquire()
 
             proxy = self._callbacks.getProxyHistory()
+
+            proxyItems = []
+            for item in proxy:
+                if item.getComment() == SCOPE_MONITOR_COMMENT:
+                    proxyItems.append(item)
+
+            print 'proxyItems has: ' + str(len(proxyItems))
+            # TODO - if no proxy items, sraight to import
+
             lines = f.read().splitlines()
             for line in lines:
                 data = line.split(",")
@@ -828,7 +840,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     analyzed = True
 
                 requestResponse = None
-                for request in proxy:
+                for request in proxyItems:
                     if url == self.getEndpoint(request):
                         print 'Match found when importing for url: ' + url
                         requestResponse = request
