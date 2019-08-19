@@ -131,9 +131,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
 
-        self.showAllButton.setBounds(40, 60 + Y_OFFSET, 400, 40)
-        self.showNewButton.setBounds(40, 80 + Y_OFFSET, 400, 40)
-        self.showTestedButton.setBounds(40, 100 + Y_OFFSET, 400, 40)
+        self.showAllButton.setBounds(40, 60 + Y_OFFSET, 400, 30)
+        self.showNewButton.setBounds(40, 80 + Y_OFFSET, 400, 30)
+        self.showTestedButton.setBounds(40, 100 + Y_OFFSET, 400, 30)
         #self.showNewButton = JRadioButton(SHOW_NEW_BUTTON_LABEL, False)
         #self.showTestedButton = JRadioButton(SHOW_TEST_BUTTON_LABEL, False)
 
@@ -828,7 +828,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self._callbacks.saveExtensionSetting("exportFile", filename)
 
         #print 'saving state to: ' + filename
-        with open(filename, 'a') as f:
+        with open(filename, 'w') as f:
             self._lock.acquire()
             for item in self._log:
                 line = self.exportRequest(item, "xx")
@@ -859,7 +859,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
             proxyItems = []
             for item in proxy:
-                if item.getComment() == SCOPE_MONITOR_COMMENT:
+                if SCOPE_MONITOR_COMMENT in item.getComment():
                     proxyItems.append(item)
 
             print 'proxyItems has: ' + str(len(proxyItems))
