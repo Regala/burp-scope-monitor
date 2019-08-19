@@ -54,3 +54,4 @@ Use the GitHub issue search — check if the issue has already been reported.
 
 - BlazeIt team
 - BBAC
+- HackerOne
