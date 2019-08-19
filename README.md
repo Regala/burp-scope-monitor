@@ -7,8 +7,9 @@ Wether you're a bug bounty hunter, pentester or researcher taking a crack at a w
 
 ## Main Features
 
-- Simple, easy way to monitor new endpoints never tested
- - "New only" will show up only endpoints not analyzed yet
+- Simple, easy way to keep track of unique endpoints when testing an application
+- Mark individual endpoints as analyzed or not
+- Instantly understand when a new endpoint, not tested is requested
 - Accessible from Proxy tab (right click, mark request as analyzed/not)
 - Send to Repeater convenience
 - Enforcment of Burp's in scope rules 
