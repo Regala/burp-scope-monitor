@@ -206,6 +206,16 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.startOptionButton.addActionListener(self.handleStartOption)
         self.startOptionButton.setBounds(50, 350 + Y_OPTION_SPACING, 420, 30)
 
+        self.markTestedRequestsProxy = JCheckBox("Color request in Proxy tab if analyzed")
+        self.markTestedRequestsProxy.setSelected(True)
+        self.markTestedRequestsProxy.addActionListener(self.handleTestedRequestsProxy)
+        self.markTestedRequestsProxy.setBounds(50, 350 + Y_OPTION_SPACING*2, 420, 30)
+
+        self.markNotTestedRequestsProxy = JCheckBox("Color request in Proxy tab if NOT analyzed (new)")
+        self.markNotTestedRequestsProxy.setSelected(True)
+        self.markNotTestedRequestsProxy.addActionListener(self.handleNotTestedRequestsProxy)
+        self.markNotTestedRequestsProxy.setBounds(50, 350 + Y_OPTION_SPACING*3, 420, 30)
+
 
         self.saveButton = JButton("Save now")
         self.saveButton.addActionListener(self.handleSaveButton)
@@ -252,6 +262,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         config.add(self.otherLabel)
         config.add(self.repeaterOptionButton)
         config.add(self.scopeOptionButton)
+        config.add(self.markTestedRequestsProxy)
+        config.add(self.markNotTestedRequestsProxy)
 
         iexport.add(self.saveButton)
         iexport.add(self.loadButton)
@@ -387,7 +399,17 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self.autoSaveOption.setSelected(True)
         else:
             self.autoSaveOption.setSelected(False)
-            
+        
+        if self._callbacks.loadExtensionSetting("CONFIG_HIGHLIGHT_TESTED") == "True":
+            self.markTestedRequestsProxy.setSelected(True)
+        else:
+            self.markTestedRequestsProxy.setSelected(False)
+
+        if self._callbacks.loadExtensionSetting("CONFIG_HIGHLIGHT_NOT_TESTED") == "True":
+            self.markNotTestedRequestsProxy.setSelected(True)
+        else:
+            self.markNotTestedRequestsProxy.setSelected(False)
+
 
 
 
@@ -479,6 +501,16 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
 
     ##### CUSTOM CODE #####
+    def handleTestedRequestsProxy(self, event):
+        self._callbacks.saveExtensionSetting("CONFIG_HIGHLIGHT_TESTED", str(self.markTestedRequestsProxy.isSelected()))
+        return
+
+    def handleNotTestedRequestsProxy(self, event):
+        self._callbacks.saveExtensionSetting("CONFIG_HIGHLIGHT_NOT_TESTED", str(self.markNotTestedRequestsProxy.isSelected()))
+        return
+
+
+
     def handleStartOption(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_AUTOSTART", str(self.startOptionButton.isSelected()))
         print 'saving autostart: ' + str(self.startOptionButton.isSelected())
@@ -673,6 +705,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 if method == self._helpers.analyzeRequest(item._requestResponse).getMethod():
                     print 'duplicate URL+method, skipping.. '
                     self._lock.release()
+
+                    # has it been analyzed?
+                    if self.markTestedRequestsProxy.isSelected() and item._analyzed:
+                        messageInfo.setHighlight("green")
+
+                    if self.markNotTestedRequestsProxy.isSelected() and not(item._analyzed):
+                        messageInfo.setHighlight("red")
+
                     return
 
         messageInfo.setComment(SCOPE_MONITOR_COMMENT)
