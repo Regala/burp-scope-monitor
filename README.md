@@ -11,8 +11,8 @@ Wether you're a bug bounty hunter, pentester or researcher taking a crack at a w
 - Mark individual endpoints as analyzed or not
 - Instantly understand when a new endpoint, not tested is requested
 - Accessible from Proxy tab (right click, mark request as analyzed/not)
-- Send to Repeater convenience
-- Enforcment of Burp's in scope rules 
+- Send to Repeater
+- Enforcement of Burp's in scope rules 
 - Import/Export state file directly to a CSV file for
 - Autosave option
 
