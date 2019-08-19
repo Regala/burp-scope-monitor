@@ -34,6 +34,12 @@ Most of the options available in General or Import tabs are auto-explanatory.
 - Export to spreadsheet / Google Sheets
 - Adding notes to the endpoint
 
+## Implementation
+
+The code is not yet performant, optimized or anything similar. KISS and it works. Performance will be increased depending on demand and how the extension performs when handling large Burp projects.
+
+To circumvent some of Burp's Extender API limitations, some small hacks were implemented. One of those is automatically setting a comment on the requests that flow in the Proxy tab. You can still add comments on the items, as you'd normally would, but just make sure to keep the placeholder string (`scope-monitor-placeholder`) there. Hopefully in the future each requestResponse from Burp will have a unique identifier, which would make the import state / load from file much cleaner and fast. With large state files, this might hang a bit when loading.
+
 ## Contributing
 
 I welcome contributions from the public, from bug reports, feature suggestions and pull requests.
