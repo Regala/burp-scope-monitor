@@ -402,7 +402,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         userSelection = fileChooser.showOpenDialog(parentFrame)
 
-        if (userSelection == JFileChooser.APPROVE_OPTION):
+        if userSelection == JFileChooser.APPROVE_OPTION:
             fileLoad = fileChooser.getSelectedFile()
             filename = fileLoad.getAbsolutePath()
 
@@ -565,7 +565,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             print "Showing new scope only"
             tmpLog = ArrayList()
             for item in self._fullLog:
-                if not (item._analyzed):
+                if not item._analyzed:
                     tmpLog.add(item)
             self._log = tmpLog
         elif event.getActionCommand() == SHOW_TEST_BUTTON_LABEL:
@@ -620,7 +620,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         # print "processing httpMessage.."
         # print messageIsRequest
-        if not (self.STATUS):
+        if not self.STATUS:
             return
 
         if messageIsRequest:
@@ -666,7 +666,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     if self.markTestedRequestsProxy.isSelected() and item._analyzed:
                         messageInfo.setHighlight("green")
 
-                    if self.markNotTestedRequestsProxy.isSelected() and not (item._analyzed):
+                    if self.markNotTestedRequestsProxy.isSelected() and not item._analyzed:
                         messageInfo.setHighlight("red")
 
                     return
@@ -720,7 +720,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # self.setBackground(Color.GREEN)
         return self.returnEntry(rowIndex, columnIndex, logEntry)
 
-        if self.showNewButton.isSelected() and not (logEntry._analyzed):
+        if self.showNewButton.isSelected() and not logEntry._analyzed:
             return self.returnEntry(rowIndex, columnIndex, logEntry)
         elif self.showTestedButton.isSelected() and logEntry._analyzed:
             return self.returnEntry(rowIndex, columnIndex, logEntry)
@@ -1019,7 +1019,7 @@ class sendRequestRepeater(ActionListener):
 
             secure = True if proto == 'https' else False
 
-            self._extender._callbacks.sendToRepeater(host, port, secure, request.getRequest(), None);
+            self._extender._callbacks.sendToRepeater(host, port, secure, request.getRequest(), None)
 
         return
 
