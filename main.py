@@ -54,10 +54,7 @@ SCOPE_MONITOR_COMMENT = "scope-monitor-placeholder"
 
 class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel,
                    IContextMenuFactory, IExtensionStateListener):
-
-    #
-    # implement IBurpExtender
-    #
+    """Implement IBurpExtender"""
 
     def registerExtenderCallbacks(self, callbacks):
         # keep a reference to our callbacks object
@@ -99,7 +96,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self._splitpane = JSplitPane(JSplitPane.VERTICAL_SPLIT)
 
-        ##### config pane
+        # config pane
         self._config = JTabbedPane()
 
         config = JPanel()
@@ -263,7 +260,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._config.addTab("General", config)
         self._config.addTab("Import/Export", iexport)
 
-        ##### end config pane
+        # end config pane
 
         self._parentPane.addTab("Monitor", self._splitpane)
         self._parentPane.addTab("Config", self._config)
@@ -307,7 +304,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         tabs.addTab("Response", self._responseViewer.getComponent())
         self._splitpane.setRightComponent(tabs)
 
-        ## Row sorter shit 
+        # Row sorter shit
 
         # self._tableRowSorterAutoProxyAutoAction = CustomTableRowSorter(self.logTable.getModel())
         # self.logTable.setRowSorter(self._tableRowSorterAutoProxyAutoAction)
@@ -357,7 +354,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         return
 
-    ##### CUSTOM CODE #####
+    # Custom code
     def loadConfigs(self):
 
         if self._callbacks.loadExtensionSetting("CONFIG_AUTOSTART") == "True":
@@ -444,8 +441,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             print 'no bad mimes saved, reverting'
             self.badMimesText.setText(", ".join(self.BAD_MIMES))
 
-    ## GLOBAL CONTEXT CODE ##
-
     def createMenuItems(self, invocation):
         responses = invocation.getSelectedMessages()
         if responses > 0:
@@ -471,7 +466,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     def getMethod(self, requestResponse):
         return self._helpers.analyzeRequest(requestResponse).getMethod()
 
-    ##### CUSTOM CODE #####
     def handleTestedRequestsProxy(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_HIGHLIGHT_TESTED", str(self.markTestedRequestsProxy.isSelected()))
         return
@@ -824,7 +818,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     proxyItems.append(item)
 
             print 'proxyItems has: ' + str(len(proxyItems))
-            # TODO - if no proxy items, sraight to import
+            # TODO - if no proxy items, straight to import
 
             lines = f.read().splitlines()
             for line in lines:
@@ -875,8 +869,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 #
 # extend JTable to handle cell selection
 #
-
-# def getRequest(self,):
 
 class Table(JTable):
     def __init__(self, extender):
@@ -1049,7 +1041,7 @@ class markRequestsHandler(ActionListener):
 
             print "Changing url: " + url
 
-            ### TODO REPLACE FOR MARK_AS_ANALYZED 
+            # TODO: Replace for MARK_AS_ANALYZED
             self._extender._lock.acquire()
 
             for item in self._extender._log:
@@ -1066,8 +1058,6 @@ class markRequestsHandler(ActionListener):
         # self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
 
         return
-
-    ### GLOBAL CONTEXT ####
 
 
 class handleMenuItems(ActionListener):
