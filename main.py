@@ -955,7 +955,7 @@ class CustomTableRowSorter(TableRowSorter):
             keys = self.getSortKeys()
 
             # check if the sort keys are not empty
-            if keys.isEmpty() == False:
+            if not keys.isEmpty():
 
                 # get the sort key
                 sortKey = keys.get(0)
