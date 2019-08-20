@@ -3,8 +3,6 @@ A Burp Suite Extension to monitor and keep track of tested endpoints.
 
 ![](http://g.recordit.co/MwAyLS1VkZ.gif)
 
-Wether you're a bug bounty hunter, pentester or researcher taking a crack at a web app - hopefully this will be useful.
-
 ## Main Features
 
 - Simple, easy way to keep track of unique endpoints when testing an application
