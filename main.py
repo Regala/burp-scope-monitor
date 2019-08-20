@@ -516,7 +516,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
     def handleStartOption(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_AUTOSTART", str(self.startOptionButton.isSelected()))
-        print 'saving autostart: ' + str(self.startOptionButton.isSelected())
+        #print 'saving autostart: ' + str(self.startOptionButton.isSelected())
         return
 
     def startOrStop(self, event, autoStart):
@@ -553,7 +553,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return 
 
     def handleBadExtensionsButton(self, event):
-        print "before BAD array: "
+        #print "before BAD array: "
         print self.BAD_EXTENSIONS
 
         extensions = self.badExtensionsText.getText()
@@ -561,8 +561,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         print 'New extensions blocked: ' + extensions 
         bad = extensions.replace(" ", "")
         self.BAD_EXTENSIONS = bad.split(",")
-        print "BAD array: "
-        print self.BAD_EXTENSIONS
+        #print "BAD array: "
+        #print self.BAD_EXTENSIONS
 
     def handleBadExtensionsDefaultButton(self, event):
         self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
@@ -643,7 +643,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     #
     
     def markAnalyzed(self, messageIsRequest, state):
-        print "markAnalyzed..."
+        #print "markAnalyzed..."
         self._lock.acquire()
 
         url = self.getEndpoint(messageIsRequest)
@@ -660,20 +660,20 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         #print "processing httpMessage.."
         #print messageIsRequest
-        print "processHttp status: " + str(self.STATUS)
+        #print "processHttp status: " + str(self.STATUS)
         if not(self.STATUS):
             return
 
-        print "global handler status: (true): " + str(self.GLOBAL_HANDLER)
-        print "(processHTTP) messageIsRequest"
-        print messageIsRequest 
+        #print "global handler status: (true): " + str(self.GLOBAL_HANDLER)
+        #print "(processHTTP) messageIsRequest"
+        #print messageIsRequest 
         if messageIsRequest and not(self.GLOBAL_HANDLER):
             return
 
         if self.scopeOptionButton.isSelected():
             url = self._helpers.analyzeRequest(messageInfo).getUrl()
             if not self._callbacks.isInScope(url):
-                print 'Url not in scope, skipping.. '
+                #print 'Url not in scope, skipping.. '
                 return
 
         #print "still processing httpMessage.."
@@ -684,7 +684,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         url = self.getEndpoint(messageInfo)
         method = self.getMethod(messageInfo)
 
-        print "(processHTTP) before extensions check: " + url 
+        #print "(processHTTP) before extensions check: " + url 
 
         for extension in self.BAD_EXTENSIONS:
             if url.endswith(extension):
@@ -732,7 +732,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed, date, method)
         #print "toolFlag: " + str(toolFlag)
 
-        print "(processHTTP) Adding URL: " + url 
+        #print "(processHTTP) Adding URL: " + url 
         self._log.add(entry)
         self._fullLog.add(entry)
         self.fireTableRowsInserted(row, row)
@@ -822,11 +822,11 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return self._currentlyDisplayedItem.getHttpService()
 
     def getRequest(self):
-        print 'getRequest called'
+        #print 'getRequest called'
         return self._currentlyDisplayedItem.getRequest()
 
     def getResponse(self):
-        print 'getResponse called: '
+        #print 'getResponse called: '
         print self._currentlyDisplayedItem.getResponse()
         return self._currentlyDisplayedItem.getResponse()
     
@@ -1087,7 +1087,7 @@ class deleteRequestHandler(ActionListener):
             self._extender._log.remove(self._extender._log.get(model_row))
 
         self._extender.fireTableDataChanged()
-        print 'refreshing view ..... *****'
+        #print 'refreshing view ..... *****'
 
         return 
 
@@ -1116,13 +1116,14 @@ class sendRequestRepeater(ActionListener):
 
         return 
 
+### LOCAL CONTEXT
 class markRequestsHandler(ActionListener):
     def __init__(self, extender, state):
         self._extender = extender
         self._state = state
 
     def actionPerformed(self, e):
-        print "COPY SELECTED URL HANDLER ******"
+        #print "COPY SELECTED URL HANDLER ******"
         #print "Status is: " + str(self._state)
 
         rows = self._extender.logTable.getSelectedRows()
@@ -1139,8 +1140,10 @@ class markRequestsHandler(ActionListener):
             for item in self._extender._log:
                 if url == item._url:
                     item._analyzed = self._state
+                    self._extender.paintItems(item._requestResponse, item)
                     #break
             self._extender._lock.release()
+
 
         self._extender.fireTableDataChanged()
         #print 'refreshing view ..... *****'
@@ -1163,14 +1166,12 @@ class handleMenuItems(ActionListener):
         self._extender.GLOBAL_HANDLER = True
 
         if self._menuName == "analyzed":
-            print "MARK AS ANALYZED"
             self._extender.GLOBAL_HANDLER_ANALYZED = True
             self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
             self._extender.markAnalyzed(self._messageInfo, True)
             #start_new_thread(self._extender.sendRequestToAutorizeWork,(self._messageInfo,))
 
         if self._menuName == "not":
-            print "MARK AS NOT ANALYZED"
             self._extender.GLOBAL_HANDLER_ANALYZED = False
             self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
             self._extender.markAnalyzed(self._messageInfo, False)
