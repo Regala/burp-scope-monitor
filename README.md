@@ -60,6 +60,11 @@ The bug tracker utilizes several labels to help organize and identify issues.
 
 Use the GitHub issue search — check if the issue has already been reported.
 
+### Known bugs:
+
+- Sometimes when switching from "Show All" to "Show New Only" Burp hangs/crashes. If you encounter this behavior please let me know how you reproduce it. 
+- Manually marking requests as analyzed from the main extension UI tab doesn't apply colors in the proxy
+
 ## Special Thanks
 
 - BlazeIt team
