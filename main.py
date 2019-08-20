@@ -15,28 +15,28 @@ from burp import ITab
 from java.awt import Color
 from java.awt.event import ActionListener
 from java.awt.event import MouseAdapter
-from java.util import ArrayList;
-from java.util import LinkedList;
+from java.util import ArrayList
+from java.util import LinkedList
 from javax.swing import ButtonGroup
 from javax.swing import JButton
 from javax.swing import JCheckBox
-from javax.swing import JFileChooser;
-from javax.swing import JFrame;
+from javax.swing import JFileChooser
+from javax.swing import JFrame
 from javax.swing import JLabel
 from javax.swing import JMenuItem
 from javax.swing import JPanel
 from javax.swing import JPopupMenu
 from javax.swing import JRadioButton
-from javax.swing import JScrollPane;
-from javax.swing import JSplitPane;
-from javax.swing import JTabbedPane;
-from javax.swing import JTable;
+from javax.swing import JScrollPane
+from javax.swing import JSplitPane
+from javax.swing import JTabbedPane
+from javax.swing import JTable
 # from java.awt.event import ListSelectionListener
 from javax.swing import JTextArea
 from javax.swing import ListSelectionModel
 from javax.swing import SortOrder
-from javax.swing.table import AbstractTableModel;
-from javax.swing.table import DefaultTableCellRenderer;
+from javax.swing.table import AbstractTableModel
+from javax.swing.table import DefaultTableCellRenderer
 from javax.swing.table import TableRowSorter
 
 RED_COLOR = Color(255, 135, 135)
