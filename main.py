@@ -720,12 +720,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # self.setBackground(Color.GREEN)
         return self.returnEntry(rowIndex, columnIndex, logEntry)
 
-        if self.showNewButton.isSelected() and not logEntry._analyzed:
-            return self.returnEntry(rowIndex, columnIndex, logEntry)
-        elif self.showTestedButton.isSelected() and logEntry._analyzed:
-            return self.returnEntry(rowIndex, columnIndex, logEntry)
-        elif self.showAllButton.isSelected():
-            return self.returnEntry(rowIndex, columnIndex, logEntry)
+        # if self.showNewButton.isSelected() and not logEntry._analyzed:
+        #     return self.returnEntry(rowIndex, columnIndex, logEntry)
+        # elif self.showTestedButton.isSelected() and logEntry._analyzed:
+        #     return self.returnEntry(rowIndex, columnIndex, logEntry)
+        # elif self.showAllButton.isSelected():
+        #     return self.returnEntry(rowIndex, columnIndex, logEntry)
 
     def returnEntry(self, rowIndex, columnIndex, entry):
         logEntry = self._log.get(rowIndex)
