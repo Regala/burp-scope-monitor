@@ -80,6 +80,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         # set our extension name
         callbacks.setExtensionName("Burp Scope Monitor")
 
+        self.GLOBAL_HANDLER_ANALYZED = False
+        self.GLOBAL_HANDLER = False
         self.STATUS = False
         self.AUTOSAVE_REQUESTS = 10
         self.AUTOSAVE_TIMEOUT  = 600 # 10 minutes should be fine
@@ -658,13 +660,15 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         #print "processing httpMessage.."
         #print messageIsRequest
+        print "processHttp status: " + str(self.STATUS)
         if not(self.STATUS):
             return
 
-
-        if messageIsRequest:
+        print "global handler status: (true): " + str(self.GLOBAL_HANDLER)
+        print "(processHTTP) messageIsRequest"
+        print messageIsRequest 
+        if messageIsRequest and not(self.GLOBAL_HANDLER):
             return
-
 
         if self.scopeOptionButton.isSelected():
             url = self._helpers.analyzeRequest(messageInfo).getUrl()
@@ -679,6 +683,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         url = self.getEndpoint(messageInfo)
         method = self.getMethod(messageInfo)
+
+        print "(processHTTP) before extensions check: " + url 
 
         for extension in self.BAD_EXTENSIONS:
             if url.endswith(extension):
@@ -701,15 +707,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         for item in self._log:
             if url == item._url:
                 if method == self._helpers.analyzeRequest(item._requestResponse).getMethod():
-                    print 'duplicate URL+method, skipping.. '
+                    #print 'duplicate URL+method, skipping.. '
                     self._lock.release()
 
                     # has it been analyzed?
-                    if self.markTestedRequestsProxy.isSelected() and item._analyzed:
-                        messageInfo.setHighlight("green")
-
-                    if self.markNotTestedRequestsProxy.isSelected() and not(item._analyzed):
-                        messageInfo.setHighlight("red")
+                    item._analyzed = self.GLOBAL_HANDLER_ANALYZED
+                    self.paintItems(messageInfo, item)
 
                     return
 
@@ -719,6 +722,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         if self._callbacks.getToolName(toolFlag) == "Repeater":
             if self.repeaterSetting:
                 analyzed = True
+        if self.GLOBAL_HANDLER_ANALYZED:
+            analyzed = True
 
         #print 'in httpmessage, response:'
         #print self._helpers.analyzeResponse(messageInfo.getResponse())
@@ -726,9 +731,14 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         date = datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S %d %b %Y')
         entry = LogEntry(toolFlag, self._callbacks.saveBuffersToTempFiles(messageInfo), url, analyzed, date, method)
         #print "toolFlag: " + str(toolFlag)
+
+        print "(processHTTP) Adding URL: " + url 
         self._log.add(entry)
         self._fullLog.add(entry)
         self.fireTableRowsInserted(row, row)
+
+        self.paintItems(messageInfo, entry)
+
         self._lock.release()
 
         #print "columnCoun:" + str(self.logTable.getColumnCount())
@@ -737,6 +747,21 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     # extend AbstractTableModel
     #
     
+    def paintItems(self, messageInfo, item):
+        '''
+        print "in paint Items"
+        print "mark color is: (true)" + str(self.markTestedRequestsProxy.isSelected())
+        print "global handler analyzed:           :" + str(self.GLOBAL_HANDLER_ANALYZED)
+        print "item analyzed should be the same ^^:" + str(item._analyzed)
+        '''
+        if (self.markTestedRequestsProxy.isSelected()) and (item._analyzed and self.GLOBAL_HANDLER_ANALYZED):
+            messageInfo.setHighlight("green")
+            return
+
+        if self.markNotTestedRequestsProxy.isSelected() and not(item._analyzed):
+            messageInfo.setHighlight("red")
+
+
     def getRowCount(self):
         try:
             return self._log.size()
@@ -842,7 +867,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 savedUrls.append(savedEntry.split(",")[1])
             #print "savedUrls len: " + str(len(savedUrls))
             #print "savedUrls:"
-            print savedUrls
+            #print savedUrls
             fr.close()
 
         with open(filename, 'a+') as f:
@@ -1135,15 +1160,21 @@ class handleMenuItems(ActionListener):
         self._messageInfo = messageInfo
 
     def actionPerformed(self, e):
+        self._extender.GLOBAL_HANDLER = True
+
         if self._menuName == "analyzed":
             print "MARK AS ANALYZED"
+            self._extender.GLOBAL_HANDLER_ANALYZED = True
             self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
             self._extender.markAnalyzed(self._messageInfo, True)
             #start_new_thread(self._extender.sendRequestToAutorizeWork,(self._messageInfo,))
 
         if self._menuName == "not":
             print "MARK AS NOT ANALYZED"
+            self._extender.GLOBAL_HANDLER_ANALYZED = False
             self._extender.processHttpMessage(4, self._messageInfo, self._messageInfo)
             self._extender.markAnalyzed(self._messageInfo, False)
 
+        self._extender.GLOBAL_HANDLER_ANALYZED = False
+        self._extender.GLOBAL_HANDLER = False
             #self._extender.replaceString.setText(self._extender.getCookieFromMessage(self._messageInfo))
