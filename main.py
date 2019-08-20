@@ -103,6 +103,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._log = ArrayList()
         self._fullLog = ArrayList()
         self._lock = Lock()
+        self._lockFile = Lock()
         
         # main split pane
         self._parentPane = JTabbedPane()
@@ -527,7 +528,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
             self.STATUS = False
 
     def handleStartButton(self, event):
-        print 'in handleStartButton'
         self.startOrStop(event, False)
 
     def handleAutoSaveOption(self, event):
@@ -817,6 +817,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #print 'Exporting: "' + line + '"'
         return line
 
+    def exportUrlEncode(self, url):
+        return self._helpers.urlEncode(url).replace(",", "%2c")
+
     def exportState(self, filename):
         filename = self.selectPathText.getText()
 
@@ -827,15 +830,30 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         else:
             self._callbacks.saveExtensionSetting("exportFile", filename)
 
-        #print 'saving state to: ' + filename
-        with open(filename, 'w') as f:
-            self._lock.acquire()
-            for item in self._log:
-                line = self.exportRequest(item, "xx")
-                f.write(line)
+        print 'saving state to: ' + filename
 
+        savedUrls = []
+        
+        self._lockFile.acquire()
+        with open(filename, 'r') as fr:
+            savedEntries = fr.read().splitlines()
+            savedUrls = []
+            for savedEntry in savedEntries:
+                savedUrls.append(savedEntry.split(",")[1])
+            #print "savedUrls len: " + str(len(savedUrls))
+            #print "savedUrls:"
+            print savedUrls
+            fr.close()
+
+        with open(filename, 'a+') as f:
+            
+            for item in self._log:
+                if self.exportUrlEncode(item._url) not in savedUrls:
+                    line = self.exportRequest(item, "xx")
+                    f.write(line)
             f.close()
-            self._lock.release()
+        self._lockFile.release()
+        
         return
 
     def importState(self, filename):
@@ -852,17 +870,18 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         self.STATUS = False
 
+        self._lockFile.acquire()
         with open(filename, 'r') as f:
-            self._lock.acquire()
 
             proxy = self._callbacks.getProxyHistory()
 
             proxyItems = []
             for item in proxy:
-                if SCOPE_MONITOR_COMMENT in item.getComment():
-                    proxyItems.append(item)
+                if item.getComment():
+                    if SCOPE_MONITOR_COMMENT in item.getComment():
+                        proxyItems.append(item)
 
-            print 'proxyItems has: ' + str(len(proxyItems))
+            #print 'proxyItems has: ' + str(len(proxyItems))
             # TODO - if no proxy items, sraight to import
 
             lines = f.read().splitlines()
@@ -871,7 +890,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 url = data[1]
                 url = self._helpers.urlDecode(url) 
 
-                print 'Saving: ' + url
+                #print 'Saving: ' + url
 
                 analyzed = False
                 if data[0] == "True":
@@ -880,7 +899,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 requestResponse = None
                 for request in proxyItems:
                     if url == self.getEndpoint(request):
-                        print 'Match found when importing for url: ' + url
+                        #print 'Match found when importing for url: ' + url
                         requestResponse = request
                         break
 
@@ -888,12 +907,13 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
                 #(self, tool, requestResponse, url, analyzed, date, method):
 
-            self._lock.release()
+            self._lockFile.release()
         print 'finished loading.. '
-        print 'size: ' + str(self._log.size())
+        #print 'size: ' + str(self._log.size())
         self.fireTableDataChanged()
 
-        self.STATUS = True
+        if self.startButton.getText() == MONITOR_ON_LABEL:
+            self.STATUS = True
 
         return
 
@@ -1030,7 +1050,7 @@ class deleteRequestHandler(ActionListener):
         self._extender = extender
 
     def actionPerformed(self, e):
-        print "COPY SELECTED URL HANDLER ******"
+        #print "COPY SELECTED URL HANDLER ******"
 
         rows = self._extender.logTable.getSelectedRows()
         to_delete = []
@@ -1051,7 +1071,7 @@ class sendRequestRepeater(ActionListener):
         self._extender = extender
 
     def actionPerformed(self, e):
-        print "COPY SELECTED URL HANDLER ******"
+        #print "COPY SELECTED URL HANDLER ******"
 
         rows = self._extender.logTable.getSelectedRows()
         for row in rows:
@@ -1086,7 +1106,7 @@ class markRequestsHandler(ActionListener):
             model_row = self._extender.logTable.convertRowIndexToModel(row)
             url = self._extender._log.get(model_row)._url
 
-            print "Changing url: " + url
+            #print "Changing url: " + url
 
             ### TODO REPLACE FOR MARK_AS_ANALYZED 
             self._extender._lock.acquire()
@@ -1098,7 +1118,7 @@ class markRequestsHandler(ActionListener):
             self._extender._lock.release()
 
         self._extender.fireTableDataChanged()
-        print 'refreshing view ..... *****'
+        #print 'refreshing view ..... *****'
 
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, True, True)
         #self._extender.changeSelection(self._extender.SELECTED_VIEW_ROW, 1, False, False)
