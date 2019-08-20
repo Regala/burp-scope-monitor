@@ -29,6 +29,7 @@ Most of the options available in General or Import tabs are auto-explanatory.
 - *"Repeater request automatically marks as analyzed"* - when issuing a request to an endpoint from repeater, it marks this request as analyzed automatically.
 - *"Color request in Proxy tab"* - this essentially applies the behavior of the extension in the Proxy tab, if you combine these options with "Show only highlighted items" in Proxy. However, it's not as pleasant to the eyes as the color pallete is limited. 
 - *"Autosave periodically"* - backups the state file every 10 minutes. When activating this option, consider disabling *"Autostart Scope Monitor"*. This is in order to maintain a different state file per Burp project. However, you can easily maintain only one, master state file.
+- *"Import/Export"* is dedicated to handle the saved state files. It's preferred to open your Burp project file associated with the Scope Monitor. It will still work if the Burp project is different, but when loading the saved entries, you won't be able to send them to Repeater or view the request itself in the Request/Response viewer (this is due to the fact that we are not storing the actually requests - just the endpoint, it's analyzed status and a couple of other more. This makes it a little bit more efficient).
 
 ## Future Development
 
