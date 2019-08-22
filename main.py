@@ -681,6 +681,9 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         #if (self._callbacks.getToolName(toolFlag) != "Proxy") or (self._callbacks.getToolName(toolFlag) != "Repeater"):
         #    return
 
+        if (self._callbacks.getToolName(toolFlag) == "Scanner"):
+            return
+
         url = self.getEndpoint(messageInfo)
         method = self.getMethod(messageInfo)
 
