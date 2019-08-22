@@ -3,8 +3,6 @@ A Burp Suite Extension to monitor and keep track of tested endpoints.
 
 ![](http://g.recordit.co/MwAyLS1VkZ.gif)
 
-Wether you're a bug bounty hunter, pentester or researcher taking a crack at a web app - hopefully this will be useful.
-
 ## Main Features
 
 - Simple, easy way to keep track of unique endpoints when testing an application
@@ -59,6 +57,11 @@ The bug tracker utilizes several labels to help organize and identify issues.
 ### Guidelines for bug reports 🐛
 
 Use the GitHub issue search — check if the issue has already been reported.
+
+### Known bugs:
+
+- Sometimes when switching from "Show All" to "Show New Only" Burp hangs/crashes. If you encounter this behavior please let me know how you reproduce it. 
+- Manually marking requests as analyzed from the main extension UI tab doesn't apply colors in the proxy
 
 ## Special Thanks
 
