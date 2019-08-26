@@ -861,15 +861,18 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         savedUrls = []
         
         self._lockFile.acquire()
-        with open(filename, 'r') as fr:
-            savedEntries = fr.read().splitlines()
-            savedUrls = []
-            for savedEntry in savedEntries:
-                savedUrls.append(savedEntry.split(",")[1])
-            #print "savedUrls len: " + str(len(savedUrls))
-            #print "savedUrls:"
-            #print savedUrls
-            fr.close()
+        try:
+            with open(filename, 'r') as fr:
+                savedEntries = fr.read().splitlines()
+                savedUrls = []
+                for savedEntry in savedEntries:
+                    savedUrls.append(savedEntry.split(",")[1])
+                #print "savedUrls len: " + str(len(savedUrls))
+                #print "savedUrls:"
+                #print savedUrls
+                fr.close()
+        except IOError:
+            print "Autosaving skipped as file doesn't exist yet" 
 
         with open(filename, 'a+') as f:
             
