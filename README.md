@@ -62,6 +62,7 @@ Use the GitHub issue search — check if the issue has already been reported.
 
 - Sometimes when switching from "Show All" to "Show New Only" Burp hangs/crashes. If you encounter this behavior please let me know how you reproduce it. 
 - Manually marking requests as analyzed from the main extension UI tab doesn't apply colors in the proxy
+- The import/export function often makes Burp freeze (it unfreezes after a while) so this needs a review, probably has something to do with the locks
 
 ## Special Thanks
 
