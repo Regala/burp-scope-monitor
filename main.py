@@ -93,8 +93,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
         self.BAD_MIMES      = self.BAD_MIMES_DEFAULT
 
-        self.repeaterSetting = True
-
         # create the log and a lock on which to synchronize when adding log entries
 
         self._currentlyDisplayedItem = None
@@ -543,7 +541,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.importState("test")
 
     def handleRepeaterOptionButton(self, event):
-        self.repeaterSetting = self.repeaterOptionButton.isSelected()
         self._callbacks.saveExtensionSetting("CONFIG_REPEATER", str(self.repeaterOptionButton.isSelected()))
         return
 
@@ -676,9 +673,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 #print 'Url not in scope, skipping.. '
                 return
 
-        #print "still processing httpMessage.."
+        #print "still processing httpMessage.., request came from: " + self._callbacks.getToolName(toolFlag)
 
         if ((self._callbacks.getToolName(toolFlag) != "Repeater") and (self._callbacks.getToolName(toolFlag) != "Proxy") and (self._callbacks.getToolName(toolFlag) != "Target")):
+            #print 'Aborting processHTTP, request came from: ' + str(self._callbacks.getToolName(toolFlag))
             return
 
 
@@ -699,7 +697,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 #print 'Bad mime:' + mime
                 return
 
-        
+        #print "[httpMessage] before lock"        
         # create a new log entry with the message details
         self._lock.acquire()
         row = self._log.size()
@@ -712,20 +710,31 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     self._lock.release()
 
                     # has it been analyzed?
-                    item._analyzed = self.GLOBAL_HANDLER_ANALYZED
+                    analyzed = False
+                    if self._callbacks.getToolName(toolFlag) == "Repeater":
+                        if self.repeaterOptionButton.isSelected():
+                            analyzed = True
+                            #print "[httpMessage] setting analyzed as true" 
+                    if self.GLOBAL_HANDLER_ANALYZED:
+                        analyzed = True
+
+                    item._analyzed = analyzed
                     self.paintItems(messageInfo, item)
 
                     return
 
+        #print "[httpMessage] before setComment" 
         messageInfo.setComment(SCOPE_MONITOR_COMMENT)
         # reached here, must be new entry
         analyzed = False
         if self._callbacks.getToolName(toolFlag) == "Repeater":
-            if self.repeaterSetting:
+            if self.repeaterOptionButton.isSelected():
                 analyzed = True
+                #print "[httpMessage] setting analyzed as true" 
         if self.GLOBAL_HANDLER_ANALYZED:
             analyzed = True
 
+        #print "[httpMessage] after comment" 
         #print 'in httpmessage, response:'
         #print self._helpers.analyzeResponse(messageInfo.getResponse())
 
