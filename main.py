@@ -5,6 +5,7 @@ from burp import IHttpListener
 from burp import IMessageEditorController
 from burp import IContextMenuFactory
 from burp import IExtensionStateListener
+from burp import IScannerCheck
 from java.awt import Component;
 from java.io import PrintWriter;
 from java.util import ArrayList;
@@ -78,7 +79,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self._helpers = callbacks.getHelpers()
         
         # set our extension name
-        callbacks.setExtensionName("Burp Scope Monitor")
+        callbacks.setExtensionName("Burp Scope Monitor Experimental")
 
         self.GLOBAL_HANDLER_ANALYZED = False
         self.GLOBAL_HANDLER = False
@@ -87,7 +88,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.AUTOSAVE_TIMEOUT  = 600 # 10 minutes should be fine
         self.CONFIG_INSCOPE    = True
 
-        self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico', '.m3u8', '.ts']
+        self.BAD_EXTENSIONS_DEFAULT = ['.gif', '.png', '.js', '.woff', '.woff2', '.jpeg', '.jpg', '.css', '.ico', '.m3u8', '.ts', '.svg']
         self.BAD_MIMES_DEFAULT      = ['gif', 'script', 'jpeg', 'jpg', 'png', 'video', 'mp2t']
         
         self.BAD_EXTENSIONS = self.BAD_EXTENSIONS_DEFAULT
@@ -359,6 +360,7 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         callbacks.registerContextMenuFactory(self)
         callbacks.registerExtensionStateListener(self)
+        callbacks.registerScannerCheck(passiveScanner(self))
         
         # add the custom tab to Burp's UI
         callbacks.addSuiteTab(self)
@@ -378,12 +380,12 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
     ##### CUSTOM CODE #####
     def loadConfigs(self):
 
-        if self._callbacks.loadExtensionSetting("CONFIG_AUTOSTART") == "True":
-            self.startOptionButton.setSelected(True)
-            self.startOrStop(None, True)
-        else:
+        if self._callbacks.loadExtensionSetting("CONFIG_AUTOSTART") == "False":
             self.startOptionButton.setSelected(False)
             self.startOrStop(None, False)
+        else:
+            self.startOptionButton.setSelected(True)
+            self.startOrStop(None, True)
 
         if self._callbacks.loadExtensionSetting("exportFile") != "":
             self.selectPathText.setText(self._callbacks.loadExtensionSetting("exportFile"))
@@ -657,15 +659,26 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
         #print "processing httpMessage.."
         #print messageIsRequest
-        #print "processHttp status: " + str(self.STATUS)
+
+        print "processHttpMessage toolFlag: " + str(toolFlag)
+        #print " -- " + str(self._callbacks.getToolName(toolFlag)) + " -- "
+
         if not(self.STATUS):
             return
 
         #print "global handler status: (true): " + str(self.GLOBAL_HANDLER)
         #print "(processHTTP) messageIsRequest"
         #print messageIsRequest 
-        if messageIsRequest and not(self.GLOBAL_HANDLER):
-            return
+
+        isFromPassiveScan = False
+        if toolFlag == 1234:
+            print "1 processHttpMessage: processing passiveScan item"
+            isFromPassiveScan = True
+
+        if toolFlag != 1234:
+            if messageIsRequest and not(self.GLOBAL_HANDLER):
+                print "1.5 processHttpMessage droping message"
+                return
 
         if self.scopeOptionButton.isSelected():
             url = self._helpers.analyzeRequest(messageInfo).getUrl()
@@ -674,11 +687,17 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 return
 
         #print "still processing httpMessage.., request came from: " + self._callbacks.getToolName(toolFlag)
+        if toolFlag == 1234:
+            print "2 processHttpMessage: processing passiveScan item; setting toolFlag to proxy (4)"
+            toolFlag = 4
 
+        #toolFlag = 4
         if ((self._callbacks.getToolName(toolFlag) != "Repeater") and (self._callbacks.getToolName(toolFlag) != "Proxy") and (self._callbacks.getToolName(toolFlag) != "Target")):
             #print 'Aborting processHTTP, request came from: ' + str(self._callbacks.getToolName(toolFlag))
+            print "Droping request from " + str(self._callbacks.getToolName(toolFlag))
             return
 
+        #print "---> still processing from tool: " + str(self._callbacks.getToolName(toolFlag))
 
         url = self.getEndpoint(messageInfo)
         method = self.getMethod(messageInfo)
@@ -724,7 +743,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     return
 
         #print "[httpMessage] before setComment" 
-        messageInfo.setComment(SCOPE_MONITOR_COMMENT)
+        if not (isFromPassiveScan):
+            messageInfo.setComment(SCOPE_MONITOR_COMMENT)
         # reached here, must be new entry
         analyzed = False
         if self._callbacks.getToolName(toolFlag) == "Repeater":
@@ -1192,3 +1212,14 @@ class handleMenuItems(ActionListener):
         self._extender.GLOBAL_HANDLER_ANALYZED = False
         self._extender.GLOBAL_HANDLER = False
             #self._extender.replaceString.setText(self._extender.getCookieFromMessage(self._messageInfo))
+
+class passiveScanner(IScannerCheck):
+    def __init__(self, extender):
+        self._extender = extender
+
+    def doPassiveScan(self, messageInfo):
+            print "--> passiveScan:"
+            #print messageInfo
+            # 4 = "Proxy"
+            self._extender.processHttpMessage(1234, messageInfo, messageInfo)
+        
