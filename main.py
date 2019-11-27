@@ -49,6 +49,10 @@ from java.lang import Runnable
 from javax.swing import RowFilter
 from java.awt.event import ItemListener
 from javax.swing.table import TableRowSorter
+
+
+from java.awt import EventQueue
+
 from urlparse import *
 import datetime 
 import time
@@ -65,6 +69,13 @@ MONITOR_ON_LABEL = "Monitor is ON"
 MONITOR_OFF_LABEL = "Monitor is OFF"
 
 SCOPE_MONITOR_COMMENT = "scope-monitor-placeholder"
+
+class Run(Runnable):
+    def __init__(self, runner):
+        self.runner = runner
+
+    def run(self):
+        self.runner()
 
 class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController, AbstractTableModel, IContextMenuFactory, IExtensionStateListener):
     
@@ -372,6 +383,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         self.loadConfigs()
 
         print "Loaded!"
+
+        print "Experimental import state.. "
+        self.importState("")
+
         self.SC = sched.scheduler(time.time, time.sleep)
         self.SCC = self.SC.enter(10, 1, self.autoSave, (self.SC,))
         self.SC.run()
@@ -940,7 +955,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                     if SCOPE_MONITOR_COMMENT in item.getComment():
                         proxyItems.append(item)
 
-            #print 'proxyItems has: ' + str(len(proxyItems))
+
+            print 'proxyItems has: ' + str(len(proxyItems))
             # TODO - if no proxy items, sraight to import
 
             lines = f.read().splitlines()
@@ -959,6 +975,8 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 if data[0] == "True":
                     analyzed = True
 
+
+                #print '.. simulating url search.. '
                 requestResponse = None
                 for request in proxyItems:
                     if url == self.getEndpoint(request):
@@ -968,7 +986,6 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
 
                 self._log.add(LogEntry("", requestResponse, url, analyzed, data[3], data[2]) ) 
 
-                #(self, tool, requestResponse, url, analyzed, date, method):
 
             self._lockFile.release()
         print 'finished loading.. '
@@ -1227,4 +1244,6 @@ class passiveScanner(IScannerCheck):
             #print messageInfo
             # 4 = "Proxy"
             self._extender.processHttpMessage(1234, messageInfo, messageInfo)
-        
+
+if __name__ in ('__main__', 'main'):
+    EventQueue.invokeLater(Run(BurpExtender))
