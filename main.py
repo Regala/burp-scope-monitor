@@ -6,6 +6,7 @@ from burp import IMessageEditorController
 from burp import IContextMenuFactory
 from burp import IExtensionStateListener
 from burp import IScannerCheck
+from java.net import URL
 from java.awt import Component;
 from java.io import PrintWriter;
 from java.util import ArrayList;
@@ -537,10 +538,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
         return
 
     def handleSaveButton(self, event):
-        self.exportState("test")
+        self.exportState("")
 
     def handleLoadButton(self, event):
-        self.importState("test")
+        self.importState("")
 
     def handleRepeaterOptionButton(self, event):
         self._callbacks.saveExtensionSetting("CONFIG_REPEATER", str(self.repeaterOptionButton.isSelected()))
@@ -949,6 +950,10 @@ class BurpExtender(IBurpExtender, ITab, IHttpListener, IMessageEditorController,
                 url = self._helpers.urlDecode(url) 
 
                 #print 'Saving: ' + url
+                if not self._callbacks.isInScope(URL(url)):
+                    print '-- imported url not in scope, skipping.. '
+                    continue
+
 
                 analyzed = False
                 if data[0] == "True":
